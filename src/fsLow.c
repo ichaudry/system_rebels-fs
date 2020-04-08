@@ -60,7 +60,7 @@ int initializePartition (int fd, uint64_t volSize, uint64_t blockSize)
 	writeRet = write(fd, buf, blockSize);		
 	fsync(fd);
 	printf("Created a volume with %llu bytes, broken into %llu blocks of %llu bytes.\n",
-				 volSize, blkCount, blockSize);	
+				 (ull_t)volSize, (ull_t)blkCount, (ull_t)blockSize);	
 	free (buf);
 	buf = NULL;
 	return PART_NOERROR;
@@ -105,16 +105,17 @@ int startPartitionSystem (char * filename, uint64_t * volSize, uint64_t * blockS
 				
 			//insure that blocksize is a power of 2 (min 512);
 			uint64_t blksz = *blockSize;
-			printf("Block size is : %llu\n", blksz);
+			printf("Block size is : %llu\n", (ull_t)blksz);
 			if (blksz < MINBLOCKSIZE) //too small 
 				blksz = MINBLOCKSIZE;
-				
+			
+			// example 1000 0111 anded = 0 1010 1001 = 1000 when anded i.e. not power of 2	
 			if ((blksz & (blksz - 1)) != 0) //not a power of 2
 				{
-				printf("%llu is not a power of 2\n", blksz);
+				printf("%llu is not a power of 2\n", (ull_t)blksz);
 				
 				blksz = 1 << (uint64_t)(ceil(log2(blksz)));
-				printf("Block size is now: %llu\n", blksz);
+				printf("Block size is now: %llu\n", (ull_t)blksz);
 				*blockSize = blksz;
 				} 
 			// insure the volume size is a multiple of blockSize
