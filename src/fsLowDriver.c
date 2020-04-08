@@ -27,7 +27,7 @@ int main (int argc, char *argv[])
 		}
 		
 	retVal = startPartitionSystem (filename, &volumeSize, &blockSize);	
-	printf("Opened %s, Volume Size: %llu;  BlockSize: %llu; Return %d\n", filename, volumeSize, blockSize, retVal);
+	printf("Opened %s, Volume Size: %llu;  BlockSize: %llu; Return %d\n", filename, (ull_t)volumeSize, (ull_t)blockSize, retVal);
 	
 	char * buf = malloc(blockSize *2);
 	char * buf2 = malloc(blockSize *2);
