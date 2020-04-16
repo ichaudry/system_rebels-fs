@@ -13,6 +13,7 @@ void * occupyMemoryBits(void * bitMap,unsigned long long startPosition, unsigned
 void * freeMemoryBits(void * bitMap,unsigned long long startPosition, unsigned long long count );
 void * count(void * bitMap,unsigned long long startPosition, unsigned long long count );
 uint64_t bitMapSize;
+uint64_t numberOfBlocks;
 
 /**
  * Starts the partition system
@@ -45,53 +46,55 @@ int startFileSystem(const char * volname, uint64_t * volSize, uint64_t * blockSi
         if(format==1){
             printf("Formatting the partition system.\n");
 
-            uint64_t numberOfBlocks=v_Info.volumeSize/v_Info.LBA_SIZE;
+            numberOfBlocks=v_Info.volumeSize/v_Info.LBA_SIZE;
 
-            // printf("This is the number of blocks for the bitmap%"PRIu64"\n", numberOfBlocks);
+            printf("This is the number of blocks for the bitmap%"PRIu64"\n", numberOfBlocks);
 
-            int bitMap[numberOfBlocks];
+            // int bitMap[numberOfBlocks];
+            void * bitMap= malloc ((*blockSize)*(39));
 
             // printf("The size of the freelist would be: %lu\n",sizeof(bitMap)/sizeof(int));
 
             //TO-DO Figure out how to use celing function and not hard code 1
-            bitMapSize= ((sizeof(bitMap)/sizeof(int))/v_Info.LBA_SIZE)+1;
+            bitMapSize= 39;
 
             // printf("The lba size of the freelist would be: %llu\n",bitMapSize);
 
             v_Info.bitMapStart=1;
 
-            v_Info.bitMapSize= bitMapSize;
+            v_Info.bitMapSize= 39;
 
             v_Info.rootDirectory=40;
 
-            occupyMemoryBits(&bitMap,0,bitMapSize);
+            occupyMemoryBits(bitMap,0,bitMapSize);
 
-            freeMemoryBits(&bitMap,bitMapSize+1,numberOfBlocks);
+            freeMemoryBits(bitMap,bitMapSize+1,numberOfBlocks);
 
-            count(&bitMap,0,numberOfBlocks);
+            count(bitMap,0,numberOfBlocks);
 
             LBAwrite(&v_Info,1,0);
 
-            LBAwrite(&bitMap,bitMapSize,1);
+            LBAwrite(bitMap,bitMapSize,1);
         }
 
         else{
             printf("File is already formatted");
 
             //TODO Figure out why malloc is not working
-            Volume_Information temp;
+            Volume_Information * temp=malloc(* blockSize);
 
-            LBAread(&temp,1,0);
-            printf("This is what is read from the read volume information\n The volume name: %s\n",temp.volumeName);
+            LBAread(temp,1,0);
+            printf("This is what is read from the read volume information\n The volume name: %s\n",temp->volumeName);
             printf("The volume size is: ");
-            printf("%"PRIu64"\n", temp.volumeSize);
+            printf("%"PRIu64"\n", temp->volumeSize);
             printf("The LBA size is: ");
-            printf("%"PRIu64"\n", temp.LBA_SIZE);
+            printf("%"PRIu64"\n", temp->LBA_SIZE);
 
-            uint64_t numberOfBlocks=(*volSize)/(*blockSize);
+            // uint64_t numberOfBlocks=(*volSize)/(*blockSize);
 
-            void * bitMap= malloc ((*blockSize)*(numberOfBlocks));
+            void * bitMap= malloc ((*blockSize)*(39));
 
+            // void * bitMap;
             // uint64_t bitMapSize= ((sizeof(bitMap)/sizeof(int))/(*blockSize))+1;
 
             LBAread(bitMap,bitMapSize,1);
@@ -162,6 +165,7 @@ void * count(void * bitMap,unsigned long long startPosition, unsigned long long 
         int zeroes=0;
         int ones=0;
        for (unsigned long long i = startPosition; i <= count; i++){
+                // printf("%d",pBitMap[i]);
                 if(pBitMap[i]==0){
                     zeroes++;
                 }

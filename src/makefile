@@ -1,7 +1,5 @@
-all: compile_main run_main
+all: compile_main
 
 compile_main:
-	@gcc -o main main.c
-run_main:
-	@./main
+	@gcc fsdriver3.c fsHigh.c fsLow.c -lm -o fsdriver3
 
