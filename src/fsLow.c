@@ -142,7 +142,7 @@ int startPartitionSystem (char * filename, uint64_t * volSize, uint64_t * blockS
 		*blockSize = buf->blocksize;
 		partInfop = malloc (sizeof(partitionInfo_t)+strlen(buf->volumeName)+4);
 		memcpy(partInfop, buf, sizeof(partitionInfo_t)+strlen(buf->volumeName)+4);
-		partInfop->filename = malloc (strlen(filename+4));
+		partInfop->filename = malloc (strlen(filename)+4);
 		strcpy(partInfop->filename, filename);
 		partInfop->fd = fd;
 		retVal = PART_NOERROR;
