@@ -12,7 +12,7 @@
 void * occupyMemoryBits(void * bitMap,unsigned long long startPosition, unsigned long long count);
 void * freeMemoryBits(void * bitMap,unsigned long long startPosition, unsigned long long count );
 void * count(void * bitMap,unsigned long long startPosition, unsigned long long count );
-
+uint64_t bitMapSize;
 
 /**
  * Starts the partition system
@@ -54,7 +54,7 @@ int startFileSystem(const char * volname, uint64_t * volSize, uint64_t * blockSi
             // printf("The size of the freelist would be: %lu\n",sizeof(bitMap)/sizeof(int));
 
             //TO-DO Figure out how to use celing function and not hard code 1
-            uint64_t bitMapSize= ((sizeof(bitMap)/sizeof(int))/v_Info.LBA_SIZE)+1;
+            bitMapSize= ((sizeof(bitMap)/sizeof(int))/v_Info.LBA_SIZE)+1;
 
             // printf("The lba size of the freelist would be: %llu\n",bitMapSize);
 
@@ -90,15 +90,15 @@ int startFileSystem(const char * volname, uint64_t * volSize, uint64_t * blockSi
 
             uint64_t numberOfBlocks=(*volSize)/(*blockSize);
 
-            int bitMap[numberOfBlocks];
+            void * bitMap= malloc ((*blockSize)*(numberOfBlocks));
 
-            uint64_t bitMapSize= ((sizeof(bitMap)/sizeof(int))/(*blockSize))+1;
+            // uint64_t bitMapSize= ((sizeof(bitMap)/sizeof(int))/(*blockSize))+1;
 
-            LBAread(&bitMap,bitMapSize,1);
+            LBAread(bitMap,bitMapSize,1);
 
             printf("This is a count check after reading back bit map\n" );
 
-            count(&bitMap,0,numberOfBlocks);
+            count(bitMap,0,numberOfBlocks);
             
         }
 
