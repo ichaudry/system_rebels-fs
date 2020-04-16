@@ -25,6 +25,14 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#ifndef uint64_t
+typedef u_int64_t uint64_t;
+#endif
+#ifndef uint32_t
+typedef u_int32_t uint32_t;
+#endif
+
+
 #define BUFSIZE 4096		//amount read at one time
 #define BLOCKSIZE 256		// number of bytes printed before a blank line
 #define LBABLOCKSIZE	512	// display blocks from command line are based on 512 bytes
@@ -90,7 +98,7 @@ int processFile (char * filename, uint64_t startBlock, uint64_t numBlocks)
 	if (position > endOfFile)		//can not start past the end of the filename
 		{
 		printf ("Can not dump file %s, starting at block %llu, past the end of the file.\n\n", 
-			filename, startBlock);	
+			filename, (unsigned long long)startBlock);	
 		return (-5);
 		}
 
@@ -102,7 +110,7 @@ int processFile (char * filename, uint64_t startBlock, uint64_t numBlocks)
 	
 	//Proces the file - the do loop goes until we read less bytes than the BUFSIZE
 	printf ("Dumping file %s, starting at block %llu for %llu block%c:\n\n", 
-		filename, startBlock, numBlocks, numBlocks != 1?'s':'\0');	
+		filename, (unsigned long long)startBlock, (unsigned long long)numBlocks, numBlocks != 1?'s':'\0');	
 	do
 		{
 		if (position >= (numBytesToStartBlock + numBytesToProcess))
