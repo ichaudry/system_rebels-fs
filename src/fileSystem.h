@@ -16,23 +16,25 @@ typedef struct {
 	//Cant use a pointer in a file system structure 
 	char fileName [32];
 	char fileAuthor [32];
-	char typeOfFile [32];
+
+	//This is 1 for directory and 0 for file
+	uint64_t typeOfFile;
     
     //9 bit values represent read - write - execute permission for user - group - root
     //e.g 000 000 111 means only the root user has permissions to read write and execute
     //101 111 111 means user has read and execute permission and group and root has all all permissions 
-	long filePermissions; 
+	uint64_t filePermissions; 
 
     //The format of the date is month.day.year
     //e.g 04271996 is april 27 1996
-	long dateCreated;
-	long dateModified;
+	uint64_t dateCreated;
+	uint64_t dateModified;
 
 	//Do we need this??
-	unsigned long int directorySize;
+	uint64_t directorySize;
 
     //Stores the head LBA of a file or directory
-	unsigned long int memoryLocation;			
+	uint64_t memoryLocation;			
 } Dir_Entry;
 
 
