@@ -1,11 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <stdint.h>
 #include <inttypes.h>
-#include "fsLow.h"
-#include "fileSystem.h"
 #include "fsHigh.h"
+
+#define MAX_BUFFER 128
+#define ARGUMENTS_BUFFER 64
+#define DELIMETER " \t\r\n\a"
+
+//Get input from stdin
+char *getInputLine();
+
+//String tokenizer
+char **getArguments(char * inputLine);
 
 //Convert char to int64_t
 int64_t S64(const char *s);
@@ -15,31 +24,70 @@ int cfileexists(const char * filename);
 
 int main(int argc, char const *argv[])
 {
-    const char * filename;
+    char * filename;
     uint64_t volSize;
     uint64_t blockSize;
+    char * prompt=">";
     
+
     if (argc == 4) {
-        filename = argv[1];
+        filename = (char *)argv[1];
         volSize= S64(argv[2]);
         blockSize =  S64(argv[3]);
-
-        printf("These are the vlaues from stdin\n Vol name is: %s\n",filename);
-        printf("vol size is %"PRIu64"\n",volSize);
-        printf("block size is %"PRIu64"\n",blockSize);
     }
     else{
-        printf("Invalid input. Please run with the following format: ./<executable> <fileName> <volSize> <blockSize>");
+        printf("Invalid input. Please run with the following format: ./<executable> <fileName> <volSize> <blockSize>\n");
+        exit(0);
     }
 
+
+    //Start the file system and check if formatting needs to be done
     if(cfileexists(filename)==0){
-        printf("The file doesn't exist format the file system.");
         startFileSystem(filename,&volSize,&blockSize,1);
     }
     else{
-        printf("The file does exist no formating done\n");
         startFileSystem(filename,&volSize,&blockSize,0);
     }
+
+    //Start command line utility to interact with the file system
+    while(1){
+        //Get stdin
+         char * inputLine= getInputLine(); 
+
+        //If no input report error and get another input
+        if(*inputLine == '\n') {
+            printf("You did not enter any input. Please try again.\n");
+            continue;
+        }   
+
+        if(strcasecmp(inputLine,"vinfo\n")==0){
+            printf("Control has reached the print vol info function\n");
+            printVolInfo();
+            continue;
+        }
+
+        //if user enters the exit command quit the shell
+        if(strcasecmp(inputLine, "exit\n")==0){
+        printf("Exiting program thank you for using SRFS.\n");
+        break;
+        }
+
+        // printf("This is the input provided : %s",inputLine);
+
+        //Split the input line into arguments using delimiters 
+        char ** arguments= getArguments(inputLine);
+
+        // printf("This is the first argument %s\nThis is the second argument %s\nThis is the third argument %s\n",arguments[0],arguments[1],arguments[2]);
+
+        
+
+
+
+
+        free(inputLine);
+        free(arguments);
+    }
+
 
     return 0;
 }
@@ -74,4 +122,55 @@ int cfileexists(const char * filename){
         return 1;
     }
     return 0;
+}
+
+char *getInputLine(){
+    //Dynamically allocate the inputline array with the desired buffer size
+    char * inputLine=(char *)malloc(MAX_BUFFER * sizeof(char));
+
+    //Catch erros while allocating array
+    if(inputLine==NULL)
+    {
+        fprintf(stderr, "lsh: allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+     
+    //Gets line from standard in and store in inputLine array while cathcing error
+    if (fgets(inputLine,1024,stdin)== NULL )
+    {
+        printf("Error occured while reading input. Input may be too long.");
+        exit(EXIT_FAILURE);
+    }
+         
+    return inputLine;  
+}
+
+
+char **getArguments(char * inputLine)
+{
+    int index = 0;
+
+    //Allocate arguments array on the heap
+    char **arguments = malloc(ARGUMENTS_BUFFER* sizeof(char*));
+
+    //Pointer to the tokens of inputline used for strtok splitting function
+    char *token;
+
+    if (!arguments) {
+        fprintf(stderr, "lsh: allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    token = strtok(inputLine, DELIMETER);
+    while (token != NULL) {
+        arguments[index] = token;
+        printf("this the token %s\n",token);
+        index++;
+        token = strtok(NULL, DELIMETER);
+    }
+
+    //To ensure that the array is null terminated
+    arguments[index] = NULL;
+
+    return arguments;
 }
