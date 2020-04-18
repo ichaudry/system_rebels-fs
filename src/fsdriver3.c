@@ -60,29 +60,29 @@ int main(int argc, char const *argv[])
             continue;
         }   
 
-        if(strcasecmp(inputLine,"vinfo\n")==0){
-            printf("Control has reached the print vol info function\n");
-            printVolInfo();
-            continue;
-        }
-
         //if user enters the exit command quit the shell
         if(strcasecmp(inputLine, "exit\n")==0){
         printf("Exiting program thank you for using SRFS.\n");
         break;
         }
 
-        // printf("This is the input provided : %s",inputLine);
-
         //Split the input line into arguments using delimiters 
         char ** arguments= getArguments(inputLine);
 
         // printf("This is the first argument %s\nThis is the second argument %s\nThis is the third argument %s\n",arguments[0],arguments[1],arguments[2]);
 
-        
+        if(strcmp(arguments[0],"vinfo\0")==0){
+            printf("Control has reached the print vol info function\n");
+            printVolInfo();
+            continue;
+        }
 
 
-
+        if(strcmp(arguments[0],"bmap\0")==0){
+            printf("Control has reached the print vol info function\n");
+            getBitMap();
+            continue;
+        }
 
         free(inputLine);
         free(arguments);
@@ -164,7 +164,7 @@ char **getArguments(char * inputLine)
     token = strtok(inputLine, DELIMETER);
     while (token != NULL) {
         arguments[index] = token;
-        printf("this the token %s\n",token);
+        // printf("this the token %s\n",token);
         index++;
         token = strtok(NULL, DELIMETER);
     }

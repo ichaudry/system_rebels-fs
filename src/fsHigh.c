@@ -11,7 +11,6 @@
 uint64_t vol_Size;
 uint64_t block_Size;
 
-
 /**
  * Starts the partition system
  * Formats the partition if not already formatted by writing the free list and volume information
@@ -46,11 +45,57 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
             LBAwrite(v_Info,1,0);
 
 
+            uint64_t noOfBlocks=vol_Size/block_Size;
+
+            printf("The number of blocks in our volume are:%lu\n",noOfBlocks);
+            
+            uint64_t arraySize= noOfBlocks/(uint64_t)(sizeof(int)*8)+1;
+            
+            printf("The arraySize would be:%lu\n",arraySize);
+
+            uint64_t bitBlocks= ((arraySize * sizeof(int))/(uint64_t)block_Size)+1;
+
+            printf("The number of bitblocks needed are:%lu\n",bitBlocks);
+
+            int * bitMap=malloc(bitBlocks*block_Size);
+            // int bitMap[arraySize];
+
+
+            //Initialize bitMap to all zeroes 
+            for (int i = 0; i < arraySize; i++ ){
+                bitMap[i] = 0;  
+            }
+
+            // occupyMemoryBits(bitMap,0,50); 
+            SetBit( bitMap, 0 ); 
+            SetBit( bitMap, 1 );
+            SetBit( bitMap, 2 );
+            SetBit( bitMap, 3 );
+            SetBit( bitMap, 4 );               // Set 3 bits
+            SetBit( bitMap, 5 );
+            SetBit( bitMap, 6 );
+            SetBit( bitMap, 7 );               // Set 3 bits
+            SetBit( bitMap, 8 );
+            SetBit( bitMap, 9 );
+            SetBit( bitMap, 10 );               // Set 3 bits
+            SetBit( bitMap, 11 );
+            SetBit( bitMap, 12 );
+            
+            LBAwrite(bitMap,bitBlocks,1);
+
+
+            free(bitMap);
             free(v_Info);
         }
         else{
             printf("File is already formatted\n"); 
+            getBitMap();
         } 
+
+
+
+
+
 
     }
     else if(ret==-1){
@@ -79,41 +124,73 @@ void * printVolInfo(){
         free(v_Info);
         
 }
-     
-       
-void * occupyMemoryBits(void * bitMap,unsigned long long startPosition, unsigned long long count){
+
+void * getBitMap(){
+       uint64_t noOfBlocks=vol_Size/block_Size;
+
+        printf("The number of blocks in our volume are:%lu\n",noOfBlocks);
+        
+        uint64_t arraySize= noOfBlocks/(uint64_t)(sizeof(int)*8)+1;
+        
+        printf("The arraySize would be:%lu\n",arraySize);
+
+        uint64_t bitBlocks= ((arraySize * sizeof(int))/(uint64_t)block_Size)+1;
+
+        printf("The number of bitblocks needed are:%lu\n",bitBlocks);
+
+        int * bitMap=malloc(bitBlocks*block_Size);
+        
+
+        LBAread(bitMap,bitBlocks,1);
+
+        for (int i = 0; i <= 2000; i++ ) {
+            if (TestBit(bitMap, i) ){
+                printf("Bit %d was set !\n", i);
+            }
+        }
+        
+        free(bitMap);
+        
+}
+
+
+void * occupyMemoryBits(int * bitMap,unsigned long long startPosition, unsigned long long count){
       
-      int * pBitMap= (int *) bitMap;
+      int * pBitMap= bitMap;
 
       for (unsigned long long i = startPosition; i <= count; i++){
-                pBitMap[i]=1;
+                SetBit(pBitMap, i);
             }
 
         return NULL;
 
 }
 
-void * freeMemoryBits(void * bitMap,unsigned long long startPosition, unsigned long long count ){
+void * freeMemoryBits(int * bitMap,unsigned long long startPosition, unsigned long long count ){
         int * pBitMap= (int *) bitMap;
+        
        for (unsigned long long i = startPosition; i <= count; i++){
-                pBitMap[i]=0;
+                ClearBit(pBitMap,i);
             }
 
             return NULL;
 }
 
-void * count(void * bitMap,unsigned long long startPosition, unsigned long long count ){
+void * count(int * bitMap,unsigned long long startPosition, unsigned long long count ){
         int * pBitMap= (int *) bitMap;
         int zeroes=0;
         int ones=0;
        for (unsigned long long i = startPosition; i <= count; i++){
                 // printf("%d",pBitMap[i]);
-                if(pBitMap[i]==0){
+
+                if(TestBit(pBitMap,i)==1){
+                    ones++;
+                }
+
+                if(TestBit(pBitMap,i)==0){
                     zeroes++;
                 }
-                 if(pBitMap[i]==1){
-                   ones++;
-                }
+                
             }
         printf("The number of zero bit blocks are %d \nThe number of one bit blocks are %d\n",zeroes,ones);
             return NULL;
