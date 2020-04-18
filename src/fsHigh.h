@@ -14,5 +14,9 @@ void * occupyMemoryBits(int * bitMap,unsigned long long startPosition, unsigned 
 void * freeMemoryBits(int * bitMap,unsigned long long startPosition, unsigned long long count );
 void * count(int * bitMap,unsigned long long startPosition, unsigned long long count );
 
+void * writeFile();
+void * readFile();
+void * moveFile();
+void * copyFile();
 
 #endif

@@ -90,7 +90,20 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
         else{
             printf("File is already formatted\n"); 
             getBitMap();
+            
+
+            writeFile();
+            readFile();
+            moveFile();
+            copyFile();
+
+            
+
         } 
+
+        //
+
+
 
 
 
@@ -108,6 +121,40 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
     return 0;
 }
 
+
+
+void * writeFile(){
+    //Get user input into a buffer that realloatable
+    //Keep track of how many bytes of char data
+    //Calculate how many 512 byte blocks you will need to write the data
+    //Malloc a buffer on a 512 boundary rounding up
+    //do a LBAwrite() using the buffer that holds the user input, the number of blocks needed and a starting point that can be anything
+}
+
+void * readFile(){
+    //To test keep track of where you wrote the file from above 
+    //Basically a reverse process where you do a LBA read into a malloced buffer of same size as above 
+    //Printf the buffer to check integrity of data
+
+}
+
+void * moveFile(){
+    //Write some data on a number of blocks 
+    //REMEMBER to use malloc for reading and writing
+    //Keep track of how many blocks 
+    //read that data into a buffer 
+    //write it to another random place 
+    //delete the old data
+}
+            
+            
+void * copyFile(){
+    //Write some data on a number of blocks 
+    //REMEMBER to use malloc for reading and writing
+    //Keep track of how many blocks 
+    //read that data into a buffer 
+    //write it to another random place 
+}
 
 void * printVolInfo(){
         Volume_Information * v_Info=malloc(block_Size);
