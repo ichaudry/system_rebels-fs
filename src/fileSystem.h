@@ -11,15 +11,31 @@
  * This structure defines the componenets of a directory entry in the system rebels filesystem 
  */
 typedef struct {
-	//NMeed an lba number and offset within it 
-	//think about whre are you actually storing these things
-	//Cant use a pointer in a file system structure 
+	//File name
 	char fileName [32];
-	char fileAuthor [32];
 
 	//This is 1 for directory and 0 for file
 	uint64_t typeOfFile;
+	
+	//Number of directory entries in a directory
+	uint64_t directorySize;
+
+	//block Size for file 
+	uint64_t lba_blocks;
+
+	//Stores the head of the file parent directory if it exists.
+	uint64_t parentDirectory;
+
+	//LBAs of inodes for files in a directory
+	uint64_t filesMeta [32];
+
+    //Stores the head LBA of a file or directory
+	uint64_t memoryLocation;	
     
+
+	//Everything below here is priority 2
+	char fileAuthor [32];
+
     //9 bit values represent read - write - execute permission for user - group - root
     //e.g 000 000 111 means only the root user has permissions to read write and execute
     //101 111 111 means user has read and execute permission and group and root has all all permissions 
@@ -30,11 +46,7 @@ typedef struct {
 	uint64_t dateCreated;
 	uint64_t dateModified;
 
-	//Do we need this??
-	uint64_t directorySize;
-
-    //Stores the head LBA of a file or directory
-	uint64_t memoryLocation;			
+			
 } Dir_Entry;
 
 
@@ -64,7 +76,7 @@ typedef struct {
 	uint64_t bitMapSize;
 
 	//LBA of the rootDirectory
-	uint64_t rootDirectory;
+	uint64_t rootDir;
 
 } Volume_Information;
 

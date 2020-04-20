@@ -5,12 +5,48 @@
 #include <math.h>
 #include "fsLow.h"
 #include "fileSystem.h"
+#include "bitMapUtil.h"
 #include "fsHigh.h"
+
+
+void * printMeta(uint64_t * metaData){
+    for(int i=0;i<32;i++){
+        printf("The index %d holds: %lu\n",i,metaData[i]);
+    }
+}
 
 
 uint64_t vol_Size;
 uint64_t block_Size;
 uint64_t noOfBlocks;
+uint64_t bitBlocks;
+uint64_t arraySize;
+Volume_Information * v_Info;
+int * bitMap;
+
+//Current active directory
+Dir_Entry * currentDirectory;
+
+
+
+void * printSub(uint64_t * metaData){
+    
+    
+    
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        printf("This is the memory location returned %lu\n",memoryLocation);
+        if(memoryLocation==0){
+            printf("No more files to display in this directory.\n");
+            break;
+        }
+        Dir_Entry * tempDir= malloc(block_Size);
+        LBAread(tempDir,1,memoryLocation);
+        printDirectory(tempDir);
+
+        free(tempDir);
+    }
+}
 
 /**
  * Starts the partition system
@@ -26,6 +62,12 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
     vol_Size=* volSize;
     block_Size=* blockSize;
     noOfBlocks=vol_Size/block_Size;
+    arraySize= noOfBlocks/(uint64_t)(sizeof(int)*8)+1;
+    bitBlocks= ((arraySize * sizeof(int))/(uint64_t)block_Size)+1;
+
+    printf("The number of blocks in our volume are:%lu\n",noOfBlocks);
+    printf("The arraySize would be:%lu\n",arraySize);
+    printf("The number of bitblocks needed are:%lu\n",bitBlocks);
 
 
     //Initialize partition system and catch errors
@@ -37,28 +79,15 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
         //Format the partition with VCB, bit map, and root directory
         if(format==1){
             printf("Formatting the partition system.\n");
-
+            
+            //Initialize volume information block to write to partion
             Volume_Information * v_Info=malloc(*blockSize);
 
             strcpy(v_Info->volumeName,volName);
             v_Info->volumeSize=* volSize;
             v_Info->LBA_SIZE= * blockSize;
 
-            //Write the volume information block
-            LBAwrite(v_Info,1,0);
-
-
-            
-            printf("The number of blocks in our volume are:%lu\n",noOfBlocks);
-            
-            uint64_t arraySize= noOfBlocks/(uint64_t)(sizeof(int)*8)+1;
-            
-            printf("The arraySize would be:%lu\n",arraySize);
-
-            uint64_t bitBlocks= ((arraySize * sizeof(int))/(uint64_t)block_Size)+1;
-
-            printf("The number of bitblocks needed are:%lu\n",bitBlocks);
-
+            //Initialize bitMap to write to partition
             int * bitMap=malloc(bitBlocks*block_Size);
      
             //Initialize bitMap to all zeroes 
@@ -66,77 +95,65 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
                 bitMap[i] = 0;  
             }
 
-            //Mark dirty bits for VCB and bit map
-            occupyMemoryBits(bitMap,0,bitBlocks); 
-        
+
+            v_Info->rootDir=6;
+
+            Dir_Entry * rootDirectory=malloc(block_Size);
+
+            char * rootName= "root";
+            strcpy(rootDirectory->fileName,"root");
+            rootDirectory->typeOfFile=1;
+            rootDirectory->directorySize=0;
+            rootDirectory->parentDirectory=0;
+
+            static const uint64_t tempMeta[32]={0};
+            memcpy(rootDirectory->filesMeta,tempMeta,sizeof tempMeta);
+            rootDirectory->memoryLocation=6;
+
+
+            //Mark dirty bits for Root Dir
+            occupyMemoryBits(bitMap,0,6); 
+            
+            //Write the volume information block
+            LBAwrite(v_Info,1,0);
+
+            //Write the bitmap
             LBAwrite(bitMap,bitBlocks,1);
 
+            //Write the root directory
+            LBAwrite(rootDirectory,1,6);
 
             free(bitMap);
             free(v_Info);
+            free(rootDirectory);
         }
+
         else{
-            printf("File is already formatted\n"); 
-            getBitMap();
-            // writeDirectory();
-
-            writeFile();
-            readFile();
-            moveFile();
-            copyFile();
-
-            
-
+            printf("File is already formatted\n");
         } 
+        //Load volume information block into memory
+        v_Info=malloc(block_Size);
+        LBAread(v_Info,1,0);
 
-        //testing find free memory block function
-        int tBitMap[20];
+        //Load bitmap into memory
+        bitMap=malloc(bitBlocks*block_Size);
+        LBAread(bitMap,bitBlocks,1);
 
-        for (int i = 0; i < 20; i++ ){
-                tBitMap[i] = 0;  
-            }
-
-        occupyMemoryBits(tBitMap,0,7);
-
-        for(int i= 0; i < 20 ; i++){
-            if(TestBit(tBitMap,i)){
-                printf("The bit %d is set to one.\n",i);
-            }
-        }
-        uint64_t lbaPosition;
-        unsigned long long counter=0;
-        unsigned long long count=5;
+        //Load root directory into memory
+        currentDirectory=malloc(block_Size);
+        LBAread(currentDirectory,1,6);
 
 
-        for(unsigned long long i =0;i<20;i++){
-            lbaPosition=i;
-            printf("The current LBA position being tested for free space head is: %lu\n",lbaPosition);
-            for(unsigned long long j= i; j<20;j++){
-                if(TestBit(tBitMap,i)){
-                    break;
-                }
-                else{
-                    counter++;
-                }
-                if(counter==count){
-                printf("The memory of length %llu exists and the starting lba block is %lu\n",count,lbaPosition);
-                break;
-            }
-            
-        }
-        // findFreeMemory(tBitMap,5);
+        writeDirectory("test");
+
+        writeDirectory("test2");
 
 
-        if(counter==count){
-                printf("The memory of length %llu exists and the starting lba block is %lu\n",count,lbaPosition);
-                break;
-            }
+        printSub(currentDirectory->filesMeta);
 
+        //Test count of bitmap for integrity
+        // count(bitMap,0,noOfBlocks);
 
-
-
-
-    }
     }
     else if(ret==-1){
         printf("File exists but can not open for write\n");
@@ -149,21 +166,85 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
 }
 
 
+void * writeDirectory(char * dirName){
 
-void * writeRootDirectory(){
-    printf("The size of the directory entry is: %lu\n",sizeof(Dir_Entry));
-    Dir_Entry * rootDirectory= malloc(block_Size);
+    Dir_Entry * directory= malloc(block_Size);
 
-   
-    strcpy(rootDirectory->fileName,"root");
-    rootDirectory->typeOfFile=1;
+    uint64_t pid=currentDirectory->memoryLocation;
+    
+    strcpy(directory->fileName,dirName);
 
-    // rootDirectory->
+    //Set type 1 for directory
+    directory->typeOfFile=1;
 
-  
+    directory->directorySize=0;
+
+    static const uint64_t tempMeta[32]={0};
+    memcpy(directory->filesMeta,tempMeta,sizeof tempMeta);
+
+    //Set the parent directory address to be the address of current working directory
+    directory->parentDirectory=pid;
+
+    uint64_t lbaPosition=findFreeMemory(bitMap,noOfBlocks,1);
+
+    directory->memoryLocation=lbaPosition;
+
+    uint64_t temp= currentDirectory->directorySize;
+
+    currentDirectory->directorySize=temp+1;
+
+    currentDirectory->filesMeta[temp]=lbaPosition;
+
+    //Overwrite the parent directory with the new meta data
+    LBAwrite(currentDirectory,1,pid);
+
+    //Write directory entry to disk
+    LBAwrite(directory,1,lbaPosition);
+
+    //TODO Modify bit map 
+    occupyMemoryBits(bitMap,lbaPosition,1);
+
+    LBAwrite(bitMap,bitBlocks,1);
+
+    free(directory);
+    
+    // rootDirectory->  
 }
 
 
+void * printDirectory(Dir_Entry * directory){  
+        printf("This is what is read from the current directory\n The directory name is: %s\n",directory->fileName);
+        printf("The type of file is: ");
+        printf("%"PRIu64"\n",directory->typeOfFile);
+        printf("The size of the directory is: %lu\n", directory->directorySize);
+        printf("The meta data contained by file is: \n");
+        printMeta(directory->filesMeta);
+        printf("The memory location of file is: %lu\n", directory->memoryLocation);
+
+}
+
+
+
+void * printVolInfo(){  
+        printf("This is what is read from the read volume information\n The volume name: %s\n",v_Info->volumeName);
+        printf("The volume size is: ");
+        printf("%"PRIu64"\n", v_Info->volumeSize);
+        printf("The LBA size is: ");
+        printf("%"PRIu64"\n", v_Info->LBA_SIZE);
+        printf("The root directoy is at: ");
+        printf("%"PRIu64"\n", v_Info->rootDir);
+        printf("The reading of vol_info is over...\n");    
+}
+
+
+void * getBitMap(){
+        count(bitMap,0,noOfBlocks);  
+}
+
+void * freeBuffers(){
+    free(v_Info);
+    free(bitMap);
+}
 
 
 void * writeFile(){
@@ -198,109 +279,3 @@ void * copyFile(){
     //read that data into a buffer 
     //write it to another random place 
 }
-
-void * printVolInfo(){
-        Volume_Information * v_Info=malloc(block_Size);
-
-        LBAread(v_Info,1,0);
-        printf("This is what is read from the read volume information\n The volume name: %s\n",v_Info->volumeName);
-        printf("The volume size is: ");
-        printf("%"PRIu64"\n", v_Info->volumeSize);
-        printf("The LBA size is: ");
-        printf("%"PRIu64"\n", v_Info->LBA_SIZE);
-
-        printf("The reading of vol_info is over...\n");
-
-        free(v_Info);
-        
-}
-
-void * getBitMap(){
-       uint64_t noOfBlocks=vol_Size/block_Size;
-
-        printf("The number of blocks in our volume are:%lu\n",noOfBlocks);
-        
-        uint64_t arraySize= noOfBlocks/(uint64_t)(sizeof(int)*8)+1;
-        
-        printf("The arraySize would be:%lu\n",arraySize);
-
-        uint64_t bitBlocks= ((arraySize * sizeof(int))/(uint64_t)block_Size)+1;
-
-        printf("The number of bitblocks needed are:%lu\n",bitBlocks);
-
-        int * bitMap=malloc(bitBlocks*block_Size);
-        
-
-        LBAread(bitMap,bitBlocks,1);
-
-        count(bitMap,0,noOfBlocks);
-        
-        
-        free(bitMap);
-        
-}
-
-
-uint64_t findFreeMemory(int * bitMap, unsigned long long count){
-    uint64_t lbaPosition;
-    unsigned long long counter=0;
-
-
-
-    for(unsigned long long i =0;i<noOfBlocks;i++){
-        lbaPosition=i;
-        for(unsigned long long j= i; j<count;j++){
-            if(TestBit(bitMap,i)){
-                break;
-            }
-            else{
-                counter++;
-            }
-        }
-        if(counter==count){
-        printf("The memory of length %llu exists and the starting lba block is %lu",count,lbaPosition);
-        break;
-        }
-    }
-
-    return lbaPosition;
-}
-
-
-void * occupyMemoryBits(int * bitMap,unsigned long long startPosition, unsigned long long count){
-
-      for (unsigned long long i = startPosition; i <= count; i++){
-                SetBit(bitMap, i);
-            }
-
-        return NULL;
-
-}
-
-void * freeMemoryBits(int * bitMap,unsigned long long startPosition, unsigned long long count ){
-  
-       for (unsigned long long i = startPosition; i <= count; i++){
-                ClearBit(bitMap,i);
-            }
-
-            return NULL;
-}
-
-void * count(int * bitMap,unsigned long long startPosition, unsigned long long count ){
-        int zeroes=0;
-        int ones=0;
-       for (unsigned long long i = startPosition; i <= count; i++){
-
-                if(TestBit(bitMap,i)){
-                    ones++;
-                }
-
-                if(! TestBit(bitMap,i)){
-                    zeroes++;
-                }
-                
-            }
-        printf("The number of zero bit blocks are %d \nThe number of one bit blocks are %d\n",zeroes,ones);
-            return NULL;
-}
-
