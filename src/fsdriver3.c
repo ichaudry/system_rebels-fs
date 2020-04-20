@@ -79,10 +79,17 @@ int main(int argc, char const *argv[])
 
 
         if(strcmp(arguments[0],"bmap\0")==0){
-            printf("Control has reached the print vol info function\n");
+            printf("Control has reached the get bmap count function\n");
             getBitMap();
             continue;
         }
+
+        if(strcmp(arguments[0],"ls\0")==0){
+            printf("Control has reached the free buffers function\n");
+            printDirectory();
+            continue;
+        }
+
 
         free(inputLine);
         free(arguments);
