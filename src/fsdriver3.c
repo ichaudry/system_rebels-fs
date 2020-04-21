@@ -1,3 +1,6 @@
+/**
+ * fsdriver3.c
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,7 +78,7 @@ int main(int argc, char const *argv[])
 
         if(strcmp(arguments[0],"vinfo\0")==0){
             // printf("Control has reached the print vol info function\n");
-            printVolInfo();
+            vinfo();
             continue;
         }
 
@@ -88,7 +91,7 @@ int main(int argc, char const *argv[])
 
         if(strcmp(arguments[0],"ls\0")==0){
             // printf("Control has reached the free buffers function\n");
-            listFiles();
+            ls();
             continue;
         }
 
@@ -100,28 +103,28 @@ int main(int argc, char const *argv[])
 
             printf("Writing directory with the name : %s\n",arguments[1]);
 
-            writeDirectory(arguments[1]);
+            mkdir(arguments[1]);
         }
 
         if(strcmp(arguments[0],"pwd\0")==0){
             // printf("Control has reached the free buffers function\n");
-            printCurrentDirectory();
+            pwd();
             continue;
         }
 
         if(strcmp(arguments[0],"cd\0")==0){
-            printf("Control has reached the change directory function\n");
+            // printf("Control has reached the change directory function\n");
             if(arguments[1]==NULL){
                 printf("You need to enter a name of the directory to change to, please try again with cd <directoryName>\nNote: To change to parent directory type cd ..");
                 continue;
             }
-            printf("The second argument to the change directory function is %s\n", arguments[1]);
+            // printf("The second argument to the change directory function is %s\n", arguments[1]);
             if(strcmp(arguments[1],"..\0")==0){
-                changeDirectoryRoot();
+                cdRoot();
                 continue;
             }
             else{
-                changeDirectory(arguments[1]);
+                cd(arguments[1]);
                 continue;
             }
         }

@@ -1,3 +1,6 @@
+/**
+ *bitMapUtil.c
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +14,7 @@ uint64_t findFreeMemory(int * bitMap,uint64_t noOfBlocks ,unsigned long long cou
 
     for(unsigned long long i =0;i<noOfBlocks;i++){
         lbaPosition=i;
-        printf("The current LBA position being tested for free space head is: %lu\n",lbaPosition);
+        // printf("The current LBA position being tested for free space head is: %lu\n",lbaPosition);
         for(unsigned long long j= i; j<noOfBlocks;j++){
             if(TestBit(bitMap,i)){
                 break;
@@ -20,7 +23,7 @@ uint64_t findFreeMemory(int * bitMap,uint64_t noOfBlocks ,unsigned long long cou
                 counter++;
             }
             if(counter==count){
-                printf("The memory of length %llu exists and the starting lba block is %lu\n",count,lbaPosition);
+                // printf("The memory of length %llu exists and the starting lba block is %lu\n",count,lbaPosition);
                 break;
             } 
         }
