@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+
 #ifndef SYSTEM_REBELS_DIRECTORY_STRUCT_HEADER_FILE
 #define SYSTEM_REBELS_DIRECTORY_STRUCT_HEADER_FILE
 
@@ -10,47 +11,72 @@
  * This structure defines the componenets of a directory entry in the system rebels filesystem 
  */
 typedef struct {
-	char *fileName;
-	char *fileAuthor;
-	char *typeOfFile;
+	//File name
+	char fileName [32];
+
+	//This is 1 for directory and 0 for file
+	uint64_t typeOfFile;
+	
+	//Number of directory entries in a directory
+	uint64_t directorySize;
+
+	//block Size for file 
+	uint64_t lba_blocks;
+
+	//Stores the head of the file parent directory if it exists.
+	uint64_t parentDirectory;
+
+	//LBAs of inodes for files in a directory
+	uint64_t filesMeta [32];
+
+    //Stores the head LBA of a file or directory
+	uint64_t memoryLocation;	
     
+
+	//Everything below here is priority 2
+	char fileAuthor [32];
+
     //9 bit values represent read - write - execute permission for user - group - root
     //e.g 000 000 111 means only the root user has permissions to read write and execute
     //101 111 111 means user has read and execute permission and group and root has all all permissions 
-	long filePermissions; 
+	uint64_t filePermissions; 
 
     //The format of the date is month.day.year
     //e.g 04271996 is april 27 1996
-	long dateCreated;
-	long dateModified;
+	uint64_t dateCreated;
+	uint64_t dateModified;
 
-	unsigned long int directorySize;
-
-    //Stores the head LBA of a file or directory
-	unsigned long int memoryLocation;			
+			
 } Dir_Entry;
+
+
+//Start here 
+//Set the first LBA
 
 /**
  * This structure defines the volume information of this filesystem 
+ * 
  */
 typedef struct {
-	//The size of a file system volume 
-	long long volumeSize;
-
-	//Pointer to the first free memory block the free memory linked list
-	void * freeMemory;
-
-	//Pointer to the root directory location 
-	void * rootDirectory;
-
-	//Unique ID to identify a particular volume 
-	long volumeID;
-
+	
 	//Name for a volume in the filesystem 
-	char * volumeName;
+	char volumeName[32];
 
-	//Dedicated LBA_SIZE for the filesystem
-	size_t LBA_SIZE;	
+	//The size of a file system volume 
+	uint64_t volumeSize;
+	
+	//Blokc size of each LBA
+	uint64_t LBA_SIZE;
+
+	//THis will be an lba block
+	//Use unint 64
+	uint64_t bitMapStart;
+
+	//Size of bitmap
+	uint64_t bitMapSize;
+
+	//LBA of the rootDirectory
+	uint64_t rootDir;
 
 } Volume_Information;
 
@@ -89,68 +115,3 @@ typedef struct{
 
 
 #endif
-
-
-
-/**
- * This is a main function that you can put in main.c to test this .h file 
- * to ensure that it compiles without errors. 
- */
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include "fileSystem.h"
-
-
-// #define BUFFER_SIZE 1000000000
-
-// int main(int argc, char const *argv[])
-// {
-//     long * LBA_POINTER= malloc(sizeof(BUFFER_SIZE));
-
-
-//     Dir_Entry *Dir_Entry= malloc(sizeof(Dir_Entry));
-//     Dir_Entry->fileName="systemRebels";
-
-//     Volume_Information *Volume_Information= malloc(sizeof(Volume_Information));
-//     Volume_Information->volumeSize= (long long ) BUFFER_SIZE;
-//     Volume_Information->rootDirectory=(void *)LBA_POINTER[0];
-//     Volume_Information->LBA_SIZE=32*sizeof(char);
-
-//     Free_Space_Tracker Free_Space_Tracker;
-//     Free_Space_Tracker.freeMemory_Head=malloc(sizeof(Node));
-//     Node * head= Free_Space_Tracker.freeMemory_Head;
-//     Free_Space_Tracker.freeMemory_Head->LBA_ID=1232342315;
-//     Free_Space_Tracker.freeMemory_Head->LBA_chunk=2;
-//     Free_Space_Tracker.freeMemory=131254321;
-//     Free_Space_Tracker.freeMemory_Tail=malloc(sizeof(Node));
-//     Node * tail=Free_Space_Tracker.freeMemory_Tail;
-//     Free_Space_Tracker.freeMemory_Tail->LBA_chunk=12;
-//     Free_Space_Tracker.freeMemory_Tail->LBA_ID=213451235;
-//     Node * test= malloc(sizeof(Node));
-//     test->LBA_ID=120;
-//     head->next=test;
-
-
-//     printf("The file name is %s\n",Dir_Entry->fileName);
-
-//     printf("The volume size is %lld\n",Volume_Information->volumeSize);
-
-//     printf("The LBA size is %lu bytes\n",Volume_Information->LBA_SIZE);
-    
-//     printf("The ID of this chunk is %ld\n",Free_Space_Tracker.freeMemory_Head->LBA_ID);
-
-//     printf("The size of this chunk is %ld\n",Free_Space_Tracker.freeMemory_Head->LBA_chunk);
-
-//     printf("The next from the head has this id %ld",head->next->LBA_ID);
-
-
-//     free(LBA_POINTER);
-//     free(Dir_Entry);
-//     free(Volume_Information);
-//     free(head);
-//     free(tail);
-//     free(test);
-
-
-//     return 0;
-// }
