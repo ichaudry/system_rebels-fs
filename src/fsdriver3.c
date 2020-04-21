@@ -51,6 +51,8 @@ int main(int argc, char const *argv[])
 
     //Start command line utility to interact with the file system
     while(1){
+        printf("\n>>>");
+
         //Get stdin
          char * inputLine= getInputLine(); 
 
@@ -72,25 +74,57 @@ int main(int argc, char const *argv[])
         // printf("This is the first argument %s\nThis is the second argument %s\nThis is the third argument %s\n",arguments[0],arguments[1],arguments[2]);
 
         if(strcmp(arguments[0],"vinfo\0")==0){
-            printf("Control has reached the print vol info function\n");
+            // printf("Control has reached the print vol info function\n");
             printVolInfo();
             continue;
         }
 
 
         if(strcmp(arguments[0],"bmap\0")==0){
-            printf("Control has reached the get bmap count function\n");
+            // printf("Control has reached the get bmap count function\n");
             getBitMap();
             continue;
         }
 
         if(strcmp(arguments[0],"ls\0")==0){
-            printf("Control has reached the free buffers function\n");
-            printDirectory();
+            // printf("Control has reached the free buffers function\n");
+            listFiles();
             continue;
         }
 
+        if(strcmp(arguments[0],"mkdir\0")==0){
+            if(arguments[1]==NULL){
+                printf("You need to enter a name for the new directory please try again with mkdir <directoryName>\n");
+                continue;
+            }
 
+            printf("Writing directory with the name : %s\n",arguments[1]);
+
+            writeDirectory(arguments[1]);
+        }
+
+        if(strcmp(arguments[0],"pwd\0")==0){
+            // printf("Control has reached the free buffers function\n");
+            printCurrentDirectory();
+            continue;
+        }
+
+        if(strcmp(arguments[0],"cd\0")==0){
+            printf("Control has reached the change directory function\n");
+            if(arguments[1]==NULL){
+                printf("You need to enter a name of the directory to change to, please try again with cd <directoryName>\nNote: To change to parent directory type cd ..");
+                continue;
+            }
+            printf("The second argument to the change directory function is %s\n", arguments[1]);
+            if(strcmp(arguments[1],"..\0")==0){
+                changeDirectoryRoot();
+                continue;
+            }
+            else{
+                changeDirectory(arguments[1]);
+                continue;
+            }
+        }
         free(inputLine);
         free(arguments);
     }

@@ -9,13 +9,6 @@
 #include "fsHigh.h"
 
 
-void * printMeta(uint64_t * metaData){
-    for(int i=0;i<32;i++){
-        printf("The index %d holds: %lu\n",i,metaData[i]);
-    }
-}
-
-
 uint64_t vol_Size;
 uint64_t block_Size;
 uint64_t noOfBlocks;
@@ -27,26 +20,6 @@ int * bitMap;
 //Current active directory
 Dir_Entry * currentDirectory;
 
-
-
-void * printSub(uint64_t * metaData){
-    
-    
-    
-    for(int i=0;i<32;i++){
-        uint64_t memoryLocation=metaData[i];
-        printf("This is the memory location returned %lu\n",memoryLocation);
-        if(memoryLocation==0){
-            printf("No more files to display in this directory.\n");
-            break;
-        }
-        Dir_Entry * tempDir= malloc(block_Size);
-        LBAread(tempDir,1,memoryLocation);
-        printDirectory(tempDir);
-
-        free(tempDir);
-    }
-}
 
 /**
  * Starts the partition system
@@ -144,15 +117,6 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
         LBAread(currentDirectory,1,6);
 
 
-        writeDirectory("test");
-
-        writeDirectory("test2");
-
-
-        printSub(currentDirectory->filesMeta);
-
-        //Test count of bitmap for integrity
-        // count(bitMap,0,noOfBlocks);
 
     }
     else if(ret==-1){
@@ -180,6 +144,7 @@ void * writeDirectory(char * dirName){
     directory->directorySize=0;
 
     static const uint64_t tempMeta[32]={0};
+    
     memcpy(directory->filesMeta,tempMeta,sizeof tempMeta);
 
     //Set the parent directory address to be the address of current working directory
@@ -201,15 +166,91 @@ void * writeDirectory(char * dirName){
     //Write directory entry to disk
     LBAwrite(directory,1,lbaPosition);
 
+    // printf("This is the LBA position found by the find memory function for making the directory....:%lu\n",lbaPosition);
+
     //TODO Modify bit map 
-    occupyMemoryBits(bitMap,lbaPosition,1);
+    occupyMemoryBits(bitMap,1,lbaPosition);
 
     LBAwrite(bitMap,bitBlocks,1);
 
     free(directory);
     
-    // rootDirectory->  
 }
+
+
+void * changeDirectoryRoot(){
+    
+    uint64_t parentAd= currentDirectory->parentDirectory;
+    if(parentAd==0){
+        printf("The current directory is the root of the file system and there are no root nodes.\n");
+        return 0;
+    }
+
+    Dir_Entry * tempDir= malloc(block_Size);
+    LBAread(tempDir,1,parentAd);
+
+    //free current directory and point it to root
+    free(currentDirectory);
+
+    currentDirectory=tempDir;
+
+    tempDir=NULL;
+}
+
+void * changeDirectory(char * dirName){
+    
+    uint64_t * metaData=currentDirectory->filesMeta;
+
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        // printf("This is the memory location returned %lu\n",memoryLocation);
+        if(memoryLocation==0){
+            // printf("No more files to display in this directory.\n");
+            break;
+        }
+        Dir_Entry * tempDir= malloc(block_Size);
+        LBAread(tempDir,1,memoryLocation);
+
+        if(tempDir->typeOfFile==0){
+            printf("%s is not a directory. Please enter a valid directory name.\n",dirName);
+        }
+        
+        //check if the names are a match
+        if(strcmp(tempDir->fileName,dirName)==0){
+            //free the current directory buffer and realloc
+            free(currentDirectory);
+            
+            //Current Directory now points to the new mathced directory
+            currentDirectory= tempDir;
+
+            tempDir=NULL;
+            
+            break;
+        }
+
+        free(tempDir);
+    }
+
+
+}
+
+//TODO later to ensure that directories with the same name are not created
+void * duplicateChecker(){
+
+}
+
+
+void * printCurrentDirectory(){
+    printf("This is what is read from the current directory\nThe directory name is: %s\n",currentDirectory->fileName);
+    printf("The type of file is: ");
+    printf("%"PRIu64"\n",currentDirectory->typeOfFile);
+    printf("The size of the directory is: %lu\n", currentDirectory->directorySize);
+    printf("The meta data contained by file is: \n");
+    printMeta(currentDirectory->filesMeta);
+    printf("The parent directory address is: %lu\n",currentDirectory->parentDirectory);
+    printf("The memory location of file is: %lu\n", currentDirectory->memoryLocation);
+}
+
 
 
 void * printDirectory(Dir_Entry * directory){  
@@ -218,10 +259,17 @@ void * printDirectory(Dir_Entry * directory){
         printf("%"PRIu64"\n",directory->typeOfFile);
         printf("The size of the directory is: %lu\n", directory->directorySize);
         printf("The meta data contained by file is: \n");
-        printMeta(directory->filesMeta);
+        // printMeta();
         printf("The memory location of file is: %lu\n", directory->memoryLocation);
 
 }
+
+void * printMeta(uint64_t * metaData){
+    for(int i=0;i<32;i++){
+        printf("The index %d holds: %lu\n",i,metaData[i]);
+    }
+}
+
 
 
 
@@ -234,6 +282,27 @@ void * printVolInfo(){
         printf("The root directoy is at: ");
         printf("%"PRIu64"\n", v_Info->rootDir);
         printf("The reading of vol_info is over...\n");    
+}
+
+
+void * listFiles(){
+    uint64_t * metaData=currentDirectory->filesMeta;
+
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        // printf("This is the memory location returned %lu\n",memoryLocation);
+        if(memoryLocation==0){
+            // printf("No more files to display in this directory.\n");
+            break;
+        }
+        Dir_Entry * tempDir= malloc(block_Size);
+        LBAread(tempDir,1,memoryLocation);
+        
+        //Printing file name
+        printf("%s\n",tempDir->fileName);
+
+        free(tempDir);
+    }
 }
 
 
