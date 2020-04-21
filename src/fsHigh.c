@@ -1,3 +1,6 @@
+/**
+ * fsHigh.c
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,15 +9,16 @@
 #include "fsLow.h"
 #include "fileSystem.h"
 #include "bitMapUtil.h"
+#include "directoryControlUtil.h"
 #include "fsHigh.h"
 
 
-uint64_t vol_Size;
-uint64_t block_Size;
+uint64_t volumeSize;
+uint64_t blckSize;
 uint64_t noOfBlocks;
-uint64_t bitBlocks;
+uint64_t bitMapSize;
 uint64_t arraySize;
-Volume_Information * v_Info;
+Volume_Information * vInfo;
 int * bitMap;
 
 //Current active directory
@@ -24,7 +28,7 @@ Dir_Entry * currentDirectory;
 /**
  * Starts the partition system
  * Formats the partition if not already formatted by writing the free list and volume information
- * Allocate space for root directory 
+ * Allocates space for root directory 
  * @param volname
  * @param volSize
  * @param blockSize
@@ -32,15 +36,15 @@ Dir_Entry * currentDirectory;
  * @return
  */
 int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, int format){
-    vol_Size=* volSize;
-    block_Size=* blockSize;
-    noOfBlocks=vol_Size/block_Size;
+    volumeSize=* volSize;
+    blckSize=* blockSize;
+    noOfBlocks=volumeSize/blckSize;
     arraySize= noOfBlocks/(uint64_t)(sizeof(int)*8)+1;
-    bitBlocks= ((arraySize * sizeof(int))/(uint64_t)block_Size)+1;
+    bitMapSize= ((arraySize * sizeof(int))/(uint64_t)blckSize)+1;
 
     printf("The number of blocks in our volume are:%lu\n",noOfBlocks);
     printf("The arraySize would be:%lu\n",arraySize);
-    printf("The number of bitblocks needed are:%lu\n",bitBlocks);
+    printf("The number of bitMapSize needed are:%lu\n",bitMapSize);
 
 
     //Initialize partition system and catch errors
@@ -54,24 +58,23 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
             printf("Formatting the partition system.\n");
             
             //Initialize volume information block to write to partion
-            Volume_Information * v_Info=malloc(*blockSize);
+            Volume_Information * volInfo=malloc(*blockSize);
 
-            strcpy(v_Info->volumeName,volName);
-            v_Info->volumeSize=* volSize;
-            v_Info->LBA_SIZE= * blockSize;
+            strcpy(volInfo->volumeName,volName);
+            volInfo->volumeSize=* volSize;
+            volInfo->LBA_SIZE= * blockSize;
 
             //Initialize bitMap to write to partition
-            int * bitMap=malloc(bitBlocks*block_Size);
+            int * bitMap=malloc(bitMapSize*blckSize);
      
             //Initialize bitMap to all zeroes 
             for (int i = 0; i < arraySize; i++ ){
                 bitMap[i] = 0;  
             }
 
+            volInfo->rootDir=6;
 
-            v_Info->rootDir=6;
-
-            Dir_Entry * rootDirectory=malloc(block_Size);
+            Dir_Entry * rootDirectory=malloc(blckSize);
 
             char * rootName= "root";
             strcpy(rootDirectory->fileName,"root");
@@ -88,16 +91,16 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
             occupyMemoryBits(bitMap,0,6); 
             
             //Write the volume information block
-            LBAwrite(v_Info,1,0);
+            LBAwrite(volInfo,1,0);
 
             //Write the bitmap
-            LBAwrite(bitMap,bitBlocks,1);
+            LBAwrite(bitMap,bitMapSize,1);
 
             //Write the root directory
             LBAwrite(rootDirectory,1,6);
 
             free(bitMap);
-            free(v_Info);
+            free(volInfo);
             free(rootDirectory);
         }
 
@@ -105,18 +108,16 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
             printf("File is already formatted\n");
         } 
         //Load volume information block into memory
-        v_Info=malloc(block_Size);
-        LBAread(v_Info,1,0);
+        vInfo=malloc(blckSize);
+        LBAread(vInfo,1,0);
 
         //Load bitmap into memory
-        bitMap=malloc(bitBlocks*block_Size);
-        LBAread(bitMap,bitBlocks,1);
+        bitMap=malloc(bitMapSize*blckSize);
+        LBAread(bitMap,bitMapSize,1);
 
         //Load root directory into memory
-        currentDirectory=malloc(block_Size);
+        currentDirectory=malloc(blckSize);
         LBAread(currentDirectory,1,6);
-
-
 
     }
     else if(ret==-1){
@@ -127,192 +128,6 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
     }
 
     return 0;
-}
-
-
-void * writeDirectory(char * dirName){
-
-    Dir_Entry * directory= malloc(block_Size);
-
-    uint64_t pid=currentDirectory->memoryLocation;
-    
-    strcpy(directory->fileName,dirName);
-
-    //Set type 1 for directory
-    directory->typeOfFile=1;
-
-    directory->directorySize=0;
-
-    static const uint64_t tempMeta[32]={0};
-    
-    memcpy(directory->filesMeta,tempMeta,sizeof tempMeta);
-
-    //Set the parent directory address to be the address of current working directory
-    directory->parentDirectory=pid;
-
-    uint64_t lbaPosition=findFreeMemory(bitMap,noOfBlocks,1);
-
-    directory->memoryLocation=lbaPosition;
-
-    uint64_t temp= currentDirectory->directorySize;
-
-    currentDirectory->directorySize=temp+1;
-
-    currentDirectory->filesMeta[temp]=lbaPosition;
-
-    //Overwrite the parent directory with the new meta data
-    LBAwrite(currentDirectory,1,pid);
-
-    //Write directory entry to disk
-    LBAwrite(directory,1,lbaPosition);
-
-    // printf("This is the LBA position found by the find memory function for making the directory....:%lu\n",lbaPosition);
-
-    //TODO Modify bit map 
-    occupyMemoryBits(bitMap,1,lbaPosition);
-
-    LBAwrite(bitMap,bitBlocks,1);
-
-    free(directory);
-    
-}
-
-
-void * changeDirectoryRoot(){
-    
-    uint64_t parentAd= currentDirectory->parentDirectory;
-    if(parentAd==0){
-        printf("The current directory is the root of the file system and there are no root nodes.\n");
-        return 0;
-    }
-
-    Dir_Entry * tempDir= malloc(block_Size);
-    LBAread(tempDir,1,parentAd);
-
-    //free current directory and point it to root
-    free(currentDirectory);
-
-    currentDirectory=tempDir;
-
-    tempDir=NULL;
-}
-
-void * changeDirectory(char * dirName){
-    
-    uint64_t * metaData=currentDirectory->filesMeta;
-
-    for(int i=0;i<32;i++){
-        uint64_t memoryLocation=metaData[i];
-        // printf("This is the memory location returned %lu\n",memoryLocation);
-        if(memoryLocation==0){
-            // printf("No more files to display in this directory.\n");
-            break;
-        }
-        Dir_Entry * tempDir= malloc(block_Size);
-        LBAread(tempDir,1,memoryLocation);
-
-        if(tempDir->typeOfFile==0){
-            printf("%s is not a directory. Please enter a valid directory name.\n",dirName);
-        }
-        
-        //check if the names are a match
-        if(strcmp(tempDir->fileName,dirName)==0){
-            //free the current directory buffer and realloc
-            free(currentDirectory);
-            
-            //Current Directory now points to the new mathced directory
-            currentDirectory= tempDir;
-
-            tempDir=NULL;
-            
-            break;
-        }
-
-        free(tempDir);
-    }
-
-
-}
-
-//TODO later to ensure that directories with the same name are not created
-void * duplicateChecker(){
-
-}
-
-
-void * printCurrentDirectory(){
-    printf("This is what is read from the current directory\nThe directory name is: %s\n",currentDirectory->fileName);
-    printf("The type of file is: ");
-    printf("%"PRIu64"\n",currentDirectory->typeOfFile);
-    printf("The size of the directory is: %lu\n", currentDirectory->directorySize);
-    printf("The meta data contained by file is: \n");
-    printMeta(currentDirectory->filesMeta);
-    printf("The parent directory address is: %lu\n",currentDirectory->parentDirectory);
-    printf("The memory location of file is: %lu\n", currentDirectory->memoryLocation);
-}
-
-
-
-void * printDirectory(Dir_Entry * directory){  
-        printf("This is what is read from the current directory\n The directory name is: %s\n",directory->fileName);
-        printf("The type of file is: ");
-        printf("%"PRIu64"\n",directory->typeOfFile);
-        printf("The size of the directory is: %lu\n", directory->directorySize);
-        printf("The meta data contained by file is: \n");
-        // printMeta();
-        printf("The memory location of file is: %lu\n", directory->memoryLocation);
-
-}
-
-void * printMeta(uint64_t * metaData){
-    for(int i=0;i<32;i++){
-        printf("The index %d holds: %lu\n",i,metaData[i]);
-    }
-}
-
-
-
-
-void * printVolInfo(){  
-        printf("This is what is read from the read volume information\n The volume name: %s\n",v_Info->volumeName);
-        printf("The volume size is: ");
-        printf("%"PRIu64"\n", v_Info->volumeSize);
-        printf("The LBA size is: ");
-        printf("%"PRIu64"\n", v_Info->LBA_SIZE);
-        printf("The root directoy is at: ");
-        printf("%"PRIu64"\n", v_Info->rootDir);
-        printf("The reading of vol_info is over...\n");    
-}
-
-
-void * listFiles(){
-    uint64_t * metaData=currentDirectory->filesMeta;
-
-    for(int i=0;i<32;i++){
-        uint64_t memoryLocation=metaData[i];
-        // printf("This is the memory location returned %lu\n",memoryLocation);
-        if(memoryLocation==0){
-            // printf("No more files to display in this directory.\n");
-            break;
-        }
-        Dir_Entry * tempDir= malloc(block_Size);
-        LBAread(tempDir,1,memoryLocation);
-        
-        //Printing file name
-        printf("%s\n",tempDir->fileName);
-
-        free(tempDir);
-    }
-}
-
-
-void * getBitMap(){
-        count(bitMap,0,noOfBlocks);  
-}
-
-void * freeBuffers(){
-    free(v_Info);
-    free(bitMap);
 }
 
 
@@ -348,3 +163,54 @@ void * copyFile(){
     //read that data into a buffer 
     //write it to another random place 
 }
+
+
+
+void * mkdir(char * dirName){
+    writeDirectory(dirName,currentDirectory,bitMap,bitMapSize,blckSize,noOfBlocks);
+    
+}
+
+
+void * cdRoot(){
+    Dir_Entry *directory=changeDirectoryRoot(currentDirectory,blckSize);
+    
+     //Catch null pointer returns
+    if(directory){
+    free(currentDirectory);
+    currentDirectory=directory;
+    }
+}
+
+void * cd(char * dirName){
+    Dir_Entry *directory=changeDirectory(dirName,currentDirectory,blckSize);
+
+    //Catch null pointer returns
+    if(directory){
+    free(currentDirectory);
+    currentDirectory=directory;
+    }
+}
+
+void * pwd(){
+    printCurrentDirectory(currentDirectory);
+}
+
+void * vinfo(){  
+    printVolInfo(vInfo);
+}
+
+void * ls(){
+    listFiles(currentDirectory,blckSize);
+}
+
+void * getBitMap(){
+        count(bitMap,0,noOfBlocks);  
+}
+
+void * freeBuffers(){
+    free(vInfo);
+    free(bitMap);
+    free(currentDirectory);
+}
+
