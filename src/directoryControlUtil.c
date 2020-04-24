@@ -12,6 +12,30 @@
 #include "directoryControlUtil.h"
 #include "fsHigh.h"
 
+
+
+
+
+void * writeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks){
+
+    if(duplicateChecker(fileName,currentDirectory,blockSize)==0){
+        char *buffer;
+        size_t bufsize = 0;
+        size_t characters;
+        printf("Begin writing to file \"%s\": ",fileName);
+        characters = getline(&buffer,&bufsize,stdin);
+        printf("%zu characters were read.\n",characters);
+        printf("You typed: '%s'\n",buffer);
+        printf("The size of the input is %lu\n",sizeof(buffer));
+        printf("The size of the input checked from bufsize is %lu\n",bufsize);
+
+        free(buffer);
+        
+
+    }
+}
+
+
 /**
  * Creates a new directory under the current working directory
  * @param dirName
@@ -94,6 +118,9 @@ void * writeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,u
 void * removeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks){
     uint64_t * metaData=currentDirectory->filesMeta;
 
+    //Parent ID of directory being removed
+    uint64_t pid=currentDirectory->memoryLocation;
+
     //Find directory to remove in current directory
     for(int i=0;i<32;i++){
         uint64_t memoryLocation=metaData[i];
@@ -108,6 +135,7 @@ void * removeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,
             //Check not directory
             if(tempDir->typeOfFile==0){
             printf("%s is not a directory. Please enter a valid directory name to remove.\n",dirName);
+            free(tempDir);
             break;
             }
 
@@ -121,15 +149,20 @@ void * removeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,
 
             currentDirectory->directorySize=temp-1;
 
-            return tempDir;
+            //Overwrite the parent directory with the new meta data
+            LBAwrite(currentDirectory,1,pid);
+
+            //overwrite bitmap
+            LBAwrite(bitMap,bitMapSize,1);
+    
+            free(tempDir);
+            
+            break;
         }
         free(tempDir);
     }
     printf("The directory with that name was not found. Please enter a valid direcotry name.\n");
-    // return NULL;
-
-
-
+    
 }
 
 /**
