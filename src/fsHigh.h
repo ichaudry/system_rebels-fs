@@ -6,17 +6,12 @@ void * vinfo();
 void * getBitMap();
 void * freeBuffers();
 
-
-void * writeFile();
-void * readFile();
-void * moveFile();
-void * copyFile();
-
 void * ls();
 void * mkdir(char * dirName);
 void * pwd();
 void * cdRoot();
 void * cd(char * dirName);
 void * rmdir(char * dirName);
+void * write(char * fileName);
 
 #endif

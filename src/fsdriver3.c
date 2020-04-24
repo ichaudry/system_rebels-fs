@@ -117,6 +117,17 @@ int main(int argc, char const *argv[])
             rmdir(arguments[1]);
         }
 
+        // if(strcmp(arguments[0],"write\0")==0){
+        //     if(arguments[1]==NULL){
+        //         printf("You need to enter a name for the new file please try again with write <fileName>\n");
+        //         continue;
+        //     }
+
+        //     printf("Writing file with the name : %s\n",arguments[1]);
+
+        //     write(arguments[1]);
+        // }
+
 
         if(strcmp(arguments[0],"pwd\0")==0){
             // printf("Control has reached the free buffers function\n");
