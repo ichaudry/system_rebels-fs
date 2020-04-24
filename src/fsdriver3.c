@@ -106,6 +106,18 @@ int main(int argc, char const *argv[])
             mkdir(arguments[1]);
         }
 
+         if(strcmp(arguments[0],"rmdir\0")==0){
+            if(arguments[1]==NULL){
+                printf("You need to enter a name for the new directory please try again with rmdir <directoryName>\n");
+                continue;
+            }
+
+            printf("Removing directory with the name : %s\n",arguments[1]);
+
+            rmdir(arguments[1]);
+        }
+
+
         if(strcmp(arguments[0],"pwd\0")==0){
             // printf("Control has reached the free buffers function\n");
             pwd();
