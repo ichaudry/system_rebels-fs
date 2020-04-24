@@ -37,20 +37,34 @@ uint64_t findFreeMemory(int * bitMap,uint64_t noOfBlocks ,unsigned long long cou
 }
 
 
-void * occupyMemoryBits(int * bitMap,unsigned long long startPosition, unsigned long long count){
+void * occupyMemoryBits(int * bitMap,uint64_t noOfBlocks,unsigned long long startPosition, unsigned long long count){
+    unsigned long long counter=0;
 
-      for (unsigned long long i = startPosition; i <= count; i++){
+      //TODO make this a while loop
+      for (unsigned long long i = startPosition; i <= noOfBlocks; i++){
                 SetBit(bitMap, i);
+                counter+=1;
+                if(counter==count){
+                    printf("%llu blocks occupied in bitmap starting from position %llu.\n",count,startPosition);
+                    break;
+                }
             }
 
         return NULL;
 
 }
 
-void * freeMemoryBits(int * bitMap,unsigned long long startPosition, unsigned long long count ){
-  
-       for (unsigned long long i = startPosition; i <= count; i++){
+void * freeMemoryBits(int * bitMap,uint64_t noOfBlocks, unsigned long long startPosition, unsigned long long count ){
+  unsigned long long counter=0;
+
+       //TODO make this while loops
+       for (unsigned long long i = startPosition; i <=noOfBlocks ; i++){
                 ClearBit(bitMap,i);
+                counter+=1;
+                if(counter==count){
+                    printf("%llu blocks cleared in bitmap starting from position %llu.\n",count,startPosition);
+                    break;
+                }
             }
 
             return NULL;

@@ -10,6 +10,7 @@
 #include "bitMapUtil.h"
 #include "fileSystem.h"
 #include "directoryControlUtil.h"
+#include "fsHigh.h"
 
 /**
  * Creates a new directory under the current working directory
@@ -53,8 +54,25 @@ void * writeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,u
 
     currentDirectory->directorySize=temp+1;
 
+    uint64_t * metaData=currentDirectory->filesMeta;
+
+    int canWrite=0;
+
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        if(memoryLocation==0){
+            metaData[i]=lbaPosition;
+            canWrite=1;
+            break;
+        }
+    }
+    if(canWrite==0){
+        printf("No space to write in the directory, try creating in another directory.\n");
+    }
+
+
     //Store the LBA of new directory in parent directories meta data array
-    currentDirectory->filesMeta[temp]=lbaPosition;
+    // currentDirectory->filesMeta[temp]=lbaPosition;
 
     //Overwrite the parent directory with the new meta data
     LBAwrite(currentDirectory,1,pid);
@@ -63,12 +81,55 @@ void * writeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,u
     LBAwrite(directory,1,lbaPosition);
 
     //Modify bit map 
-    occupyMemoryBits(bitMap,1,lbaPosition);
+    occupyMemoryBits(bitMap,noOfBlocks,lbaPosition,1);
 
     LBAwrite(bitMap,bitMapSize,1);
 
     free(directory);
     }
+}
+
+
+
+void * removeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks){
+    uint64_t * metaData=currentDirectory->filesMeta;
+
+    //Find directory to remove in current directory
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        if(memoryLocation==0){
+            continue;
+        }
+        Dir_Entry * tempDir= malloc(blockSize);
+        LBAread(tempDir,1,memoryLocation); 
+        
+        //check if the names are a match
+        if(strcmp(tempDir->fileName,dirName)==0){
+            //Check not directory
+            if(tempDir->typeOfFile==0){
+            printf("%s is not a directory. Please enter a valid directory name to remove.\n",dirName);
+            break;
+            }
+
+            //Set the bit map at that locaton as free
+            freeMemoryBits(bitMap, noOfBlocks, memoryLocation,1);
+
+            //Set the meta data in the roots as 0 indicating the place is free
+            metaData[i]=0;
+
+            uint64_t temp= currentDirectory->directorySize;
+
+            currentDirectory->directorySize=temp-1;
+
+            return tempDir;
+        }
+        free(tempDir);
+    }
+    printf("The directory with that name was not found. Please enter a valid direcotry name.\n");
+    // return NULL;
+
+
+
 }
 
 /**

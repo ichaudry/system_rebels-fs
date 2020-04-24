@@ -13,9 +13,10 @@ void * moveFile();
 void * copyFile();
 
 void * ls();
-void * mkdir();
+void * mkdir(char * dirName);
 void * pwd();
 void * cdRoot();
 void * cd(char * dirName);
+void * rmdir(char * dirName);
 
 #endif

@@ -8,8 +8,8 @@
 #define TestBit(A,k)    ( A[(k/32)] & (1 << (k%32)) )
 
 
-void * occupyMemoryBits(int * bitMap,unsigned long long startPosition, unsigned long long count);
-void * freeMemoryBits(int * bitMap,unsigned long long startPosition, unsigned long long count );
+void * occupyMemoryBits(int * bitMap,uint64_t noOfBlocks,unsigned long long startPosition, unsigned long long count);
+void * freeMemoryBits(int * bitMap,uint64_t noOfBlocks,unsigned long long startPosition, unsigned long long count );
 void * count(int * bitMap,unsigned long long startPosition, unsigned long long count );
 uint64_t findFreeMemory(int * bitMap,uint64_t noOfBlocks, unsigned long long count);
 

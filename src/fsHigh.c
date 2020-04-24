@@ -88,7 +88,7 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
 
 
             //Mark dirty bits for Root Dir
-            occupyMemoryBits(bitMap,0,6); 
+            occupyMemoryBits(bitMap,noOfBlocks,0,7); 
             
             //Write the volume information block
             LBAwrite(volInfo,1,0);
@@ -169,6 +169,10 @@ void * copyFile(){
 void * mkdir(char * dirName){
     writeDirectory(dirName,currentDirectory,bitMap,bitMapSize,blckSize,noOfBlocks);
     
+}
+
+void * rmdir(char * dirName){
+    removeDirectory(dirName,currentDirectory,bitMap,bitMapSize,blckSize,noOfBlocks);
 }
 
 
