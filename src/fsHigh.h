@@ -7,7 +7,7 @@ void * getBitMap();
 void * freeBuffers();
 
 
-void * writeFile();
+void * fsWriteFile(char * fileName);
 void * readFile();
 void * moveFile();
 void * copyFile();
@@ -18,5 +18,6 @@ void * pwd();
 void * cdRoot();
 void * cd(char * dirName);
 void * rmdir(char * dirName);
+void * fsCopyFromLinux();
 
 #endif

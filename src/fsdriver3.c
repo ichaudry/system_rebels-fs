@@ -62,12 +62,14 @@ int main(int argc, char const *argv[])
         //If no input report error and get another input
         if(*inputLine == '\n') {
             printf("You did not enter any input. Please try again.\n");
+            free(inputLine);
             continue;
         }   
 
         //if user enters the exit command quit the shell
         if(strcasecmp(inputLine, "exit\n")==0){
         printf("Exiting program thank you for using SRFS.\n");
+        free(inputLine);
         break;
         }
 
@@ -79,25 +81,23 @@ int main(int argc, char const *argv[])
         if(strcmp(arguments[0],"vinfo\0")==0){
             // printf("Control has reached the print vol info function\n");
             vinfo();
-            continue;
         }
 
 
         if(strcmp(arguments[0],"bmap\0")==0){
             // printf("Control has reached the get bmap count function\n");
             getBitMap();
-            continue;
         }
 
         if(strcmp(arguments[0],"ls\0")==0){
             // printf("Control has reached the free buffers function\n");
             ls();
-            continue;
         }
 
         if(strcmp(arguments[0],"mkdir\0")==0){
             if(arguments[1]==NULL){
                 printf("You need to enter a name for the new directory please try again with mkdir <directoryName>\n");
+                free(inputLine);
                 continue;
             }
 
@@ -106,9 +106,19 @@ int main(int argc, char const *argv[])
             mkdir(arguments[1]);
         }
 
+          if(strcmp(arguments[0],"write\0")==0){
+            if(arguments[1]==NULL){
+                printf("You need to enter a name for the new file please try again with write <fileName>\n");
+                free(inputLine);
+                continue;
+            }
+            fsWriteFile(arguments[1]); 
+        }
+
          if(strcmp(arguments[0],"rmdir\0")==0){
             if(arguments[1]==NULL){
                 printf("You need to enter a name for the new directory please try again with rmdir <directoryName>\n");
+                free(inputLine);
                 continue;
             }
 
@@ -121,25 +131,31 @@ int main(int argc, char const *argv[])
         if(strcmp(arguments[0],"pwd\0")==0){
             // printf("Control has reached the free buffers function\n");
             pwd();
-            continue;
+        }
+
+         if(strcmp(arguments[0],"cpfl\0")==0){
+            // printf("Control has reached the free buffers function\n");
+            fsCopyFromLinux();
         }
 
         if(strcmp(arguments[0],"cd\0")==0){
             // printf("Control has reached the change directory function\n");
             if(arguments[1]==NULL){
                 printf("You need to enter a name of the directory to change to, please try again with cd <directoryName>\nNote: To change to parent directory type cd ..");
+                free(inputLine);
                 continue;
             }
             // printf("The second argument to the change directory function is %s\n", arguments[1]);
             if(strcmp(arguments[1],"..\0")==0){
                 cdRoot();
-                continue;
             }
             else{
                 cd(arguments[1]);
-                continue;
             }
         }
+
+
+        printf("Clearing the driver buffers.\n");
         free(inputLine);
         free(arguments);
     }
@@ -194,7 +210,7 @@ char *getInputLine(){
     //Gets line from standard in and store in inputLine array while cathcing error
     if (fgets(inputLine,1024,stdin)== NULL )
     {
-        printf("Error occured while reading input. Input may be too long.");
+        printf("Error occured while reading input. Input may be too long.\n");
         exit(EXIT_FAILURE);
     }
          
