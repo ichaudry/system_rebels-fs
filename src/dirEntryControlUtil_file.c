@@ -177,8 +177,6 @@ void * removeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint
     //Parent ID of directory being removed
     uint64_t pid=currentDirectory->memoryLocation;
 
-  
-
     /*
     *Delete all the blocks associated with the file
     *-You know the starting block 
@@ -192,8 +190,26 @@ void * removeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint
     //checking find file function
     Dir_Entry * file=findFile(fileName,currentDirectory,blockSize);
     if(file){
+        //Total File Size
+        uint64_t fileSize=file->lba_blocks;
         printf("The name of the file is: %s\n",file->fileName);
         printf("The size of the file is: %lu\n",file->lba_blocks);
+
+        //Number of blocks allocated to file
+        uint64_t blocksNeeded=(fileSize/512)+1;
+
+        //The starting lba of file
+        uint64_t lbaStart=file->memoryLocation;
+
+        //Free the lba blocks in the bitmap
+        freeMemoryBits(bitMap,noOfBlocks,lbaStart,blocksNeeded);
+
+
+
+
+
+
+
     }
     else{
     printf("No file was found or your function is fucked up. Either of the two.\n");
