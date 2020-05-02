@@ -12,7 +12,9 @@
 #include "directoryControlUtil.h"
 #include "fsHigh.h"
 
-
+//Haven't really used yet. 
+//May be more applicable when doing mutlithreaded file processing 
+//Decide later
 typedef struct{
     
     //Need a boolean to check if whole file has been processed?
@@ -25,17 +27,7 @@ typedef struct{
 
 } openFileEntry;
 
-
-
-
 void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBlocks){
-
-    printf("The copy function being successfully reached.\n");
-
-    //Malloc an openFileEntry structure to track the metas of opened file in memory
-    // openFileEntry * openFileEntry= malloc(sizeof(openFileEntry));
-
-
     FILE * filePointer;
 
     //Total File Size
@@ -55,17 +47,17 @@ void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBloc
 
     //Check if file was successfully opened
     if (filePointer) {
+        //Calculate file size and how many blocks are need to store file
         fseek(filePointer, 0, SEEK_END);
         fileSize = ftell(filePointer);
         blocksNeeded=(fileSize/512)+1;
+
+        //Amount of space needed in the final block
         finalBlockSpace=fileSize%512;
 
+        //Find memory 
         lbaStart= findFreeMemory(bitMap,noOfBlocks,blocksNeeded);
 
-        //Set open file entry meta
-        // openFileEntry->fileSize=fileSize;
-        // openFileEntry->pointer=0;
-        
         printf("This is the size of the file opened:%lu\n",fileSize);
 
         printf("The size of char in c is %lu\n",sizeof(char));
@@ -111,14 +103,12 @@ void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBloc
             //Occupy bitmaps to reflect written data
             occupyMemoryBits(bitMap,noOfBlocks,lbaStart+i,1);
 
-
-                }
+            }
             else{
             perror("Error");
             }
             free(fileContent);
         }
-
         fclose(filePointer);
     }
     else{
@@ -144,31 +134,29 @@ void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBloc
 
     int canWrite=0;
 
+    //Check if a directory is full
+    if(currentDirectory->directorySize==32){
+        printf("No space to write in the directory, try creating in another directory.\n");
+        free(fileEntry);
+        return NULL;
+    }
+
+    //Find a free block to create a directory entry in current directory
     for(int i=0;i<32;i++){
         uint64_t memoryLocation=metaData[i];
         if(memoryLocation==0){
             metaData[i]=lbaPosition;
             currentDirectory->directorySize=temp+1;
-            canWrite=1;
             break;
         }
     }
-    if(canWrite==0){
-        printf("No space to write in the directory, try creating in another directory.\n");
-        // free(openFileEntry);
-        free(fileEntry);
-        return NULL;
-    }
-
-    //Store the LBA of new directory in parent directories meta data array
-    // currentDirectory->filesMeta[temp]=lbaPosition;
-
+     
     printf("Overwriting current directories meta data with new updaed fields.\n");
 
     //Overwrite the parent directory with the new meta data
     LBAwrite(currentDirectory,1,currentDirectory->memoryLocation);
 
- //Write directory entry to disk
+    //Write directory entry to disk
     LBAwrite(fileEntry,1,lbaPosition);
 
     //Modify bit map 
@@ -178,15 +166,10 @@ void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBloc
 
     free(fileEntry);
 
-    // free(openFileEntry);
 }
 
 
-
 void * writeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks){
-
-    
-
     if(duplicateChecker(fileName,currentDirectory,blockSize)==0){
         char *buffer;
         size_t bufsize = 0;
@@ -201,18 +184,13 @@ void * writeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint6
              * DO A MEMCOPY SO NOW THAT BUFFER HAS IT 
              * AFTER END OF FILE MAKE SURE TO WRITE THAT BUFFER 
              */
-              
-
 
         // printf("%zu characters were read.\n",characters);
         // printf("You typed: '%s'\n",buffer);
         // printf("The size of the input is %lu\n",sizeof(buffer));
         // printf("The size of the input checked from bufsize is %lu\n",bufsize);
         }
-
-       
         free(buffer);
-        
         printf("Flushed all buffers\n");
 
     }
@@ -261,25 +239,22 @@ void * writeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,u
 
     uint64_t * metaData=currentDirectory->filesMeta;
 
-    int canWrite=0;
-
-    for(int i=0;i<32;i++){
-        uint64_t memoryLocation=metaData[i];
-        if(memoryLocation==0){
-            metaData[i]=lbaPosition;
-            currentDirectory->directorySize=temp+1;
-            canWrite=1;
-            break;
-        }
-    }
-    if(canWrite==0){
+    //Check if a directory is full
+    if(currentDirectory->directorySize==32){
         printf("No space to write in the directory, try creating in another directory.\n");
         free(directory);
         return NULL;
     }
 
-    //Store the LBA of new directory in parent directories meta data array
-    // currentDirectory->filesMeta[temp]=lbaPosition;
+    //Find a free block to create a directory entry in current directory
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        if(memoryLocation==0){
+            metaData[i]=lbaPosition;
+            currentDirectory->directorySize=temp+1;
+            break;
+        }
+    }
 
     //Overwrite the parent directory with the new meta data
     LBAwrite(currentDirectory,1,pid);
@@ -293,11 +268,21 @@ void * writeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,u
     LBAwrite(bitMap,bitMapSize,1);
 
     free(directory);
+
     }
 }
 
 
-
+/**
+ * Remove a directory and all of its files
+ * @param dirName
+ * @param currentDirectory
+ * @param bitMap
+ * @param bitMapSize
+ * @param blockSize
+ * @param noOfBlocks
+ * @return
+ */
 void * removeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks){
     uint64_t * metaData=currentDirectory->filesMeta;
 
@@ -321,6 +306,11 @@ void * removeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,
             free(tempDir);
             break;
             }
+
+            //TODO IMPORTANT
+            //Everything inside this directory has to deleted as well as anything inside a directory inside this directory.
+            //It has to be a recursive call
+            //Loop through the meta data and for each entry call either the delete file function or recursively call the remove directory function
 
             //Set the bit map at that locaton as free
             freeMemoryBits(bitMap, noOfBlocks, memoryLocation,1);
@@ -435,7 +425,7 @@ int duplicateChecker(char * fileName,Dir_Entry * currentDirectory, uint64_t bloc
 }
 
 /**
- * prints current working directory
+ * Print current working directory information
  * @param currentDirectory
  * @return
  */
@@ -450,6 +440,12 @@ void * printCurrentDirectory(Dir_Entry * currentDirectory){
     printf("The memory location of file is: %lu\n", currentDirectory->memoryLocation);
 }
 
+
+/**
+ * Print directory information
+ * @param directory
+ * @return
+ */
 void * printDirectory(Dir_Entry * directory){  
         printf("This is what is read from the current directory\n The directory name is: %s\n",directory->fileName);
         printf("The type of file is: ");
@@ -461,13 +457,22 @@ void * printDirectory(Dir_Entry * directory){
 
 }
 
+/**
+ * Print file metadata
+ * @param metaData
+ * @return
+ */
 void * printMeta(uint64_t * metaData){
     for(int i=0;i<32;i++){
         printf("The index %d holds: %lu\n",i,metaData[i]);
     }
 }
 
-
+/**
+ * Print information of current volume
+ * @param vInfo
+ * @return
+ */
 void * printVolInfo(Volume_Information * vInfo){  
         printf("This is what is read from the read volume information\n The volume name: %s\n",vInfo->volumeName);
         printf("The volume size is: ");
@@ -480,7 +485,14 @@ void * printVolInfo(Volume_Information * vInfo){
 }
 
 
+/**
+ * List files in the current directory
+ * @param currentDirectory
+ * @param blockSize
+ * @return
+ */
 void * listFiles(Dir_Entry * currentDirectory, uint64_t blockSize){
+    //Get metadata of current directory
     uint64_t * metaData=currentDirectory->filesMeta;
 
     for(int i=0;i<32;i++){
@@ -488,6 +500,7 @@ void * listFiles(Dir_Entry * currentDirectory, uint64_t blockSize){
         if(memoryLocation==0){
             continue;
         }
+        //Read directory entry
         Dir_Entry * tempDir= malloc(blockSize);
         LBAread(tempDir,1,memoryLocation);
         

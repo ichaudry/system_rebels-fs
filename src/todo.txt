@@ -1,0 +1,2 @@
+- Implement checks to check returns from find free memory function
+- Write recursive functionality for remove driectory function

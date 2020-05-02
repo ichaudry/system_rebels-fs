@@ -11,6 +11,8 @@
 uint64_t findFreeMemory(int * bitMap,uint64_t noOfBlocks ,unsigned long long count){
     uint64_t lbaPosition;
     unsigned long long counter=0;
+    //Sets to 1 if memory is found. 
+    int memoryFound=0;
 
     for(unsigned long long i =0;i<noOfBlocks;i++){
         lbaPosition=i;
@@ -24,66 +26,70 @@ uint64_t findFreeMemory(int * bitMap,uint64_t noOfBlocks ,unsigned long long cou
             }
             if(counter==count){
                 // printf("The memory of length %llu exists and the starting lba block is %lu\n",count,lbaPosition);
+                memoryFound=1;
                 break;
             } 
         }
-
         if(counter==count){
-                printf("The memory of length %llu exists and the starting lba block is %lu\n",count,lbaPosition);
-                break;
-            }
+            printf("The memory of length %llu exists and the starting lba block is %lu\n",count,lbaPosition);
+            break;
+        }
     }
-    return lbaPosition;
+
+    if(memoryFound==1){
+        return lbaPosition;
+    }
+    else if(memoryFound==0){
+        printf("There is not enough space to do the write please free up some space.\n");
+        return (unsigned long long )NULL;
+    }
 }
 
 
 void * occupyMemoryBits(int * bitMap,uint64_t noOfBlocks,unsigned long long startPosition, unsigned long long count){
     unsigned long long counter=0;
 
-      //TODO make this a while loop
-      for (unsigned long long i = startPosition; i <= noOfBlocks; i++){
-                SetBit(bitMap, i);
-                counter+=1;
-                if(counter==count){
-                    printf("%llu blocks occupied in bitmap starting from position %llu.\n",count,startPosition);
-                    break;
-                }
-            }
-
-        return NULL;
-
+    //TODO make this a while loop
+    for (unsigned long long i = startPosition; i <= noOfBlocks; i++){
+        SetBit(bitMap, i);
+        counter+=1;
+        if(counter==count){
+            printf("%llu blocks occupied in bitmap starting from position %llu.\n",count,startPosition);
+            break;
+        }
+    }
+    return NULL;
 }
 
 void * freeMemoryBits(int * bitMap,uint64_t noOfBlocks, unsigned long long startPosition, unsigned long long count ){
-  unsigned long long counter=0;
+    unsigned long long counter=0;
 
-       //TODO make this while loops
-       for (unsigned long long i = startPosition; i <=noOfBlocks ; i++){
-                ClearBit(bitMap,i);
-                counter+=1;
-                if(counter==count){
-                    printf("%llu blocks cleared in bitmap starting from position %llu.\n",count,startPosition);
-                    break;
-                }
-            }
+    //TODO make this while loops
+    for (unsigned long long i = startPosition; i <=noOfBlocks ; i++){
+        ClearBit(bitMap,i);
+        counter+=1;
+        if(counter==count){
+            printf("%llu blocks cleared in bitmap starting from position %llu.\n",count,startPosition);
+            break;
+        }
+    }
 
-            return NULL;
+    return NULL;
 }
 
 void * count(int * bitMap,unsigned long long startPosition, unsigned long long count ){
-        int zeroes=0;
-        int ones=0;
-       for (unsigned long long i = startPosition; i <= count; i++){
-
-                if(TestBit(bitMap,i)){
-                    ones++;
-                }
-
-                if(! TestBit(bitMap,i)){
-                    zeroes++;
-                }
-                
-            }
-        printf("The number of zero bit blocks are %d \nThe number of one bit blocks are %d\n",zeroes,ones);
-            return NULL;
+    int zeroes=0;
+    int ones=0;
+    
+    for (unsigned long long i = startPosition; i <= count; i++){
+        if(TestBit(bitMap,i)){
+            ones++;
+        }
+        if(! TestBit(bitMap,i)){
+            zeroes++;
+        }
+    }
+    
+    printf("The number of zero bit blocks are %d \nThe number of one bit blocks are %d\n",zeroes,ones);
+    return NULL;
 }

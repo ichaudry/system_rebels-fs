@@ -1,5 +1,11 @@
 /**
  * fsdriver3.c
+ * 
+ * 
+ * 
+ *Commands needed: list directories, create directories, add and remove files, copy files, move files,
+ *setting meta data, and two “special commands” one to copy from the normal filesystem to your filesystem and the other
+ *from your filesystem to the normal filesystem
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +15,6 @@
 #include <inttypes.h>
 #include "fsHigh.h"
 
-#define MAX_BUFFER 128
 #define ARGUMENTS_BUFFER 64
 #define DELIMETER " \t\r\n\a"
 
@@ -27,12 +32,13 @@ int cfileexists(const char * filename);
 
 int main(int argc, char const *argv[])
 {
+    //Variables storing data to format/start file system
     char * filename;
     uint64_t volSize;
     uint64_t blockSize;
-    char * prompt=">";
     
 
+    //Get data to format/start file system
     if (argc == 4) {
         filename = (char *)argv[1];
         volSize= S64(argv[2]);
@@ -42,7 +48,6 @@ int main(int argc, char const *argv[])
         printf("Invalid input. Please run with the following format: ./<executable> <fileName> <volSize> <blockSize>\n");
         exit(0);
     }
-
 
     //Start the file system and check if formatting needs to be done
     if(cfileexists(filename)==0){
@@ -57,7 +62,10 @@ int main(int argc, char const *argv[])
         printf("\n>>>");
 
         //Get stdin
-         char * inputLine= getInputLine(); 
+        char * inputLine= getInputLine(); 
+
+        //test
+        printf("This is the line inputted: %s\n",inputLine);
 
         //If no input report error and get another input
         if(*inputLine == '\n') {
@@ -83,7 +91,6 @@ int main(int argc, char const *argv[])
             vinfo();
         }
 
-
         if(strcmp(arguments[0],"bmap\0")==0){
             // printf("Control has reached the get bmap count function\n");
             getBitMap();
@@ -100,13 +107,11 @@ int main(int argc, char const *argv[])
                 free(inputLine);
                 continue;
             }
-
             printf("Writing directory with the name : %s\n",arguments[1]);
-
             mkdir(arguments[1]);
         }
 
-          if(strcmp(arguments[0],"write\0")==0){
+        if(strcmp(arguments[0],"write\0")==0){
             if(arguments[1]==NULL){
                 printf("You need to enter a name for the new file please try again with write <fileName>\n");
                 free(inputLine);
@@ -115,25 +120,22 @@ int main(int argc, char const *argv[])
             fsWriteFile(arguments[1]); 
         }
 
-         if(strcmp(arguments[0],"rmdir\0")==0){
+        if(strcmp(arguments[0],"rmdir\0")==0){
             if(arguments[1]==NULL){
                 printf("You need to enter a name for the new directory please try again with rmdir <directoryName>\n");
                 free(inputLine);
                 continue;
             }
-
             printf("Removing directory with the name : %s\n",arguments[1]);
-
             rmdir(arguments[1]);
         }
-
 
         if(strcmp(arguments[0],"pwd\0")==0){
             // printf("Control has reached the free buffers function\n");
             pwd();
         }
 
-         if(strcmp(arguments[0],"cpfl\0")==0){
+        if(strcmp(arguments[0],"cpfl\0")==0){
             // printf("Control has reached the free buffers function\n");
             fsCopyFromLinux();
         }
@@ -154,7 +156,6 @@ int main(int argc, char const *argv[])
             }
         }
 
-
         printf("Clearing the driver buffers.\n");
         free(inputLine);
         free(arguments);
@@ -165,12 +166,8 @@ int main(int argc, char const *argv[])
 }
 
 
-
-/**
- * Helper Functions
- */
-
-//https://stackoverflow.com/a/17003732
+//Converts string to uint64 type
+//Source: https://stackoverflow.com/a/17003732
 int64_t S64(const char *s) {
   int64_t i;
   char c ;
@@ -185,7 +182,8 @@ int64_t S64(const char *s) {
 }
 
 
-//https://www.zentut.com/c-tutorial/c-file-exists/
+//Checks if file already exists
+//Source: https://www.zentut.com/c-tutorial/c-file-exists/
 int cfileexists(const char * filename){
     /* try to open file to read */
     FILE *file;
@@ -196,25 +194,24 @@ int cfileexists(const char * filename){
     return 0;
 }
 
-char *getInputLine(){
-    //Dynamically allocate the inputline array with the desired buffer size
-    char * inputLine=(char *)malloc(MAX_BUFFER * sizeof(char));
 
-    //Catch erros while allocating array
-    if(inputLine==NULL)
-    {
-        fprintf(stderr, "lsh: allocation error\n");
-        exit(EXIT_FAILURE);
+//Gets STDIN
+char *getInputLine(){
+    char *inputLine = NULL;
+    size_t bufsize = 0; // have getline allocate a buffer for us
+
+    if (getline(&inputLine, &bufsize, stdin) == -1){
+        if (feof(stdin)) {
+            exit(EXIT_SUCCESS);  // We recieved an EOF
+        } else {
+            perror("readline");
+            exit(EXIT_FAILURE);
+        }
     }
-     
-    //Gets line from standard in and store in inputLine array while cathcing error
-    if (fgets(inputLine,1024,stdin)== NULL )
-    {
-        printf("Error occured while reading input. Input may be too long.\n");
-        exit(EXIT_FAILURE);
-    }
-         
-    return inputLine;  
+
+
+    return inputLine;
+
 }
 
 

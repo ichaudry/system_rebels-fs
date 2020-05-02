@@ -11,6 +11,8 @@
 #include <math.h>
 #include "fsLow.h"
 
+
+
 typedef struct partitionInfo {
 	char 		volumePrefix[sizeof(PART_CAPTION)+2];
 	uint64_t	signature;
