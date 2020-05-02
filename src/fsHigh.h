@@ -18,6 +18,7 @@ void * pwd();
 void * cdRoot();
 void * cd(char * dirName);
 void * rmdir(char * dirName);
+void * rm(char * fileName);
 void * fsCopyFromLinux();
 
 #endif

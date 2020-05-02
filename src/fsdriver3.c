@@ -65,7 +65,7 @@ int main(int argc, char const *argv[])
         char * inputLine= getInputLine(); 
 
         //test
-        printf("This is the line inputted: %s\n",inputLine);
+        // printf("This is the line inputted: %s\n",inputLine);
 
         //If no input report error and get another input
         if(*inputLine == '\n') {
@@ -122,13 +122,26 @@ int main(int argc, char const *argv[])
 
         if(strcmp(arguments[0],"rmdir\0")==0){
             if(arguments[1]==NULL){
-                printf("You need to enter a name for the new directory please try again with rmdir <directoryName>\n");
+                printf("You need to enter a name for the directory to remove please try again with rmdir <directoryName>\n");
                 free(inputLine);
                 continue;
             }
             printf("Removing directory with the name : %s\n",arguments[1]);
             rmdir(arguments[1]);
         }
+
+        //Remove file function call
+        if(strcmp(arguments[0],"rm\0")==0){
+            if(arguments[1]==NULL){
+                printf("You need to enter a name for the file to be removed please try again with rmdir <directoryName>\n");
+                free(inputLine);
+                continue;
+            }
+            printf("Removing file with the name : %s\n",arguments[1]);
+            rm(arguments[1]);
+        }
+
+
 
         if(strcmp(arguments[0],"pwd\0")==0){
             // printf("Control has reached the free buffers function\n");
@@ -156,7 +169,7 @@ int main(int argc, char const *argv[])
             }
         }
 
-        printf("Clearing the driver buffers.\n");
+        // printf("Clearing the driver buffers.\n");
         free(inputLine);
         free(arguments);
     }

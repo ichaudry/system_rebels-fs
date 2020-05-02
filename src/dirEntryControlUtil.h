@@ -2,8 +2,8 @@
 // Created by ibraheem on 4/20/20.
 //
 
-#ifndef SYSTEM_REBELS_FS_DIRECTORYCONTROLUTIL_H
-#define SYSTEM_REBELS_FS_DIRECTORYCONTROLUTIL_H
+#ifndef SYSTEM_REBELS_FS_DIRENTRYCONTROLUTIL_H
+#define SYSTEM_REBELS_FS_DIRENTRYCONTROLUTIL_H
 
 void * printMeta(uint64_t * metaData);
 void * writeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks);
@@ -17,7 +17,9 @@ void * printDirectory(Dir_Entry * directory);
 void * printVolInfo(Volume_Information * vInfo);
 void * listFiles(Dir_Entry * currentDirectory, uint64_t blockSize);
 void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBlocks);
+void * removeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks);
+Dir_Entry * findFile(char * fileName,Dir_Entry * currentDirectory,uint64_t blockSize);
 
 
 
-#endif //SYSTEM_REBELS_FS_DIRECTORYCONTROLUTIL_H
+#endif //SYSTEM_REBELS_FS_DIRENTRYCONTROLUTIL_H

@@ -9,9 +9,8 @@
 #include "fsLow.h"
 #include "fileSystem.h"
 #include "bitMapUtil.h"
-#include "directoryControlUtil.h"
 #include "fsHigh.h"
-
+#include "dirEntryControlUtil.h"
 
 uint64_t volumeSize;
 uint64_t blckSize;
@@ -141,6 +140,9 @@ void * rmdir(char * dirName){
     removeDirectory(dirName,currentDirectory,bitMap,bitMapSize,blckSize,noOfBlocks);
 }
 
+void * rm(char * fileName){
+    removeFile(fileName,currentDirectory,bitMap,bitMapSize,blckSize,noOfBlocks);
+}
 
 void * fsCopyFromLinux(){
     copyFromLinux(currentDirectory,bitMap,noOfBlocks);
