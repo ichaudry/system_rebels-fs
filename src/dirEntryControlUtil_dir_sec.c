@@ -16,8 +16,6 @@
 /**
  * Check if a file with name already exists
  * @param fileName
- * @param currentDirectory
- * @param blockSize
  * @return
  */
 int duplicateChecker(char * fileName){
@@ -45,7 +43,6 @@ int duplicateChecker(char * fileName){
 
 /**
  * Print current working directory information
- * @param currentDirectory
  * @return
  */
 void * printCurrentDirectory(){
@@ -123,8 +120,18 @@ void * listFiles(){
         Dir_Entry * tempDir= malloc(blckSize);
         LBAread(tempDir,1,memoryLocation);
         
+        char fileType [32];
+
+        //Check if directory or file
+        if(tempDir->typeOfFile==0){
+            strcpy(fileType,"file");
+        }
+        else{
+            strcpy(fileType,"Directory");
+        }
+
         //Printing file name
-        printf("%s\n",tempDir->fileName);
+        printf("%s\t\tType: %s\n",tempDir->fileName,fileType);
         free(tempDir);
     }
 }

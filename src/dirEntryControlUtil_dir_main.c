@@ -25,7 +25,7 @@
  */
 void * writeDirectory(char * dirName){
 
-    if(duplicateChecker(dirName,currentDirectory,blckSize)==0){
+    if(duplicateChecker(dirName)==0){
     
     Dir_Entry * directory= malloc(blckSize);
 
@@ -227,8 +227,6 @@ Dir_Entry * changeDirectoryRoot(){
 /**
  * Change directory to a valid directory within the current working directory
  * @param dirName
- * @param currentDirectory
- * @param blckSize
  * @return
  */
 Dir_Entry * changeDirectory(char * dirName){

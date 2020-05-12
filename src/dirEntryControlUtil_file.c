@@ -26,7 +26,7 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
     //Final block space
     uint64_t finalBlockSpace;
 
-    //Figure out where to start LBA write from
+    //Figure out where to start LBA write from....This becomes fd->memory location
     uint64_t lbaStart;
 
     //Open file to initialize file size
@@ -40,13 +40,22 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
         fseek(filePointer,0,SEEK_SET);
         
         
-        blocksNeeded=(fileSize/512)+1;
+        blocksNeeded=(fileSize +(blckSize-1))/blckSize;
 
         //Amount of space needed in the final block
-        finalBlockSpace=fileSize%512;
+        if(fileSize%blckSize==0){
+        finalBlockSpace=blckSize;
+        }
+        else{
+        finalBlockSpace=fileSize%blckSize;
+        }
 
         //Find memory 
         lbaStart= findFreeMemory(bitMap,noOfBlocks,blocksNeeded);
+
+        if(!lbaStart){
+            printf("Error finding space for file on file System\n");
+        }
 
         printf("This is the size of the file opened:%lu\n",fileSize);
 
@@ -58,9 +67,15 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
 
         printf("This is where the lba start for file writing exists %lu\n",lbaStart);
 
+        // openFileEntry * fd=fileOpen(srfsFileName,"w");
+
+        // fd->fileSize=fileSize;
+        // fd->memoryLocation=lbaStart;
+        
+
 
         for(long i=0;i<blocksNeeded;i++){
-            long start=512*i;
+            long start=blckSize*i;
             uint64_t chunkSize;
 
             if(i==(blocksNeeded-1)){
@@ -68,7 +83,7 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
                 chunkSize=finalBlockSpace;
             }
             else{
-                chunkSize=512;
+                chunkSize=blckSize;
             }
 
             printf("The start of loop %lu is %lu\n",i,start);
@@ -86,6 +101,7 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
             //Load the buffer up with threads desginated portion of file
             fread (fileContent, 1, chunkSize, filePointer);
 
+
             //LBA write
             printf("This is the lba position being written %lu\n",lbaStart+i);
             LBAwrite(fileContent,1,lbaStart+i);
@@ -99,15 +115,17 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
             }
             free(fileContent);
         }
+
+        writeFileDirectoryEntry(srfsFileName,blocksNeeded,lbaStart);
+
+        printf("Write completed without error.\n");
+
         fclose(filePointer);
     }
     else{
         perror("Error");
+        return NULL;
     }
-
-    printf("Write completed without error.\n");
-
-    writeFileDirectoryEntry(srfsFileName,blocksNeeded,lbaStart);
 }
 
 
@@ -148,7 +166,7 @@ void * removeFile(char * fileName){
         printf("End of the remove file function was reached\n");
     }
     else{
-    printf("No file was found or your function is fucked up. Either of the two.\n");
+    printf("No file was found. Either of the two.\n");
     }
 }
 
@@ -235,7 +253,7 @@ Dir_Entry * findFile(char * fileName){
         if(strcmp(tempDir->fileName,fileName)==0){
             //Check if its a directory
             if(tempDir->typeOfFile==1){
-            printf("%s is a directory and not a file. Please enter a valid file name to remove.\n",fileName);
+            printf("%s is a directory and not a file. Please enter a valid file name.\n",fileName);
             free(tempDir);
             return NULL;
             }
@@ -289,6 +307,7 @@ openFileEntry * fileOpen(char * fileName,char * condition){
         //check if file exists and get the Directory entry
         Dir_Entry * file=findFile(fileName);
 
+    
         //If file not found return error
         if(!file){
             printf("Error encountered while reading file.\n");
@@ -297,6 +316,9 @@ openFileEntry * fileOpen(char * fileName,char * condition){
 
         //Create a openFile structure
         openFileEntry * fd=malloc(sizeof(openFileEntry));
+
+        //Set file name
+        strcpy(fd->fileName,fileName);
 
         //The file size
         fd->fileSize=file->lba_blocks * blckSize;
@@ -310,14 +332,34 @@ openFileEntry * fileOpen(char * fileName,char * condition){
         //the starting memory location of file
         fd->memoryLocation=file->memoryLocation;
 
+        free(file);
+
         return fd;
     }
 
-    
+    if(strcmp(condition,"w\n")){
+        //Check if file already exists
+        if(duplicateChecker(fileName)==1){
+            return NULL;
+        }
+
+        //Create a openFile structure
+        openFileEntry * fd=malloc(sizeof(openFileEntry));
 
 
+        //Set file name
+        strcpy(fd->fileName,fileName);
+
+        fd->pointer=0;
+
+        //malloc a file buffer to read/write into
+        fd->fileBuffer=malloc(blckSize);
+
+        return fd;
+    }
 }
 
+//For file close after write create directory entry
 void * fileClose(openFileEntry * fd){
     //Free file Buffer
     free(fd->fileBuffer);
@@ -326,6 +368,45 @@ void * fileClose(openFileEntry * fd){
     free(fd);
 }
 
+void * writeFile(openFileEntry * fd, char * buffer,uint64_t length){
+
+    printf("The number of bytes to write to file are %lu\n",length);
+
+    //No of blocks to read
+    unsigned long noOfBlocks= (length + (blckSize-1))/blckSize;
+
+    
+    uint64_t currentBlock=fd->pointer/blckSize;
+    uint64_t currentOffset=fd->pointer % blckSize;
+    
+    for(unsigned long i= 0;i<noOfBlocks;i++){
+        
+        
+
+
+
+
+
+    }
+
+
+
+ 
+    // else if(length + currentOffset < (blckSize*2)){
+    //     memcpy(fd->fileBuffer + currentOffset , buffer, length);
+    //     LBAwrite(fd->fileBuffer,2,currentBlock + fd->memoryLocation);
+    //     memcpy(fd->fileBuffer,fd->fileBuffer+blckSize,blckSize);  
+    // }
+    // else{
+
+    // }
+
+
+    // fd->pointer=fd->pointer+length;
+    // uint64_t currentBlock=fd->pointer/blckSize;
+    // uint64_t currentOffset=fd->pointer % blckSize;
+
+}
 
 void * readFile(openFileEntry * fd, char * buffer,uint64_t length){
 
@@ -347,7 +428,7 @@ void * readFile(openFileEntry * fd, char * buffer,uint64_t length){
     }
 
     //No of blocks to read
-    unsigned long noOfBlocks= (length/blckSize)+1;
+    unsigned long noOfBlocks= (length + (blckSize-1))/blckSize;
 
     for(unsigned long i= 0;i<noOfBlocks;i++){
         LBAread(fd->fileBuffer,1,fd->memoryLocation+i);
@@ -374,6 +455,33 @@ void * readFile(openFileEntry * fd, char * buffer,uint64_t length){
 }
 
 
+#define MYSEEK_CUR 1
+#define MYSEEK_POS 2
+#define MYSEEK_END 3
+
+uint64_t fileSeek(openFileEntry * fd,uint64_t position, int method){
+
+    switch(method)
+    {
+        case MYSEEK_CUR:
+            fd->pointer += position;
+            break;
+        
+        case MYSEEK_POS:
+            fd->pointer = position;
+
+        case MYSEEK_END:
+            fd->pointer= fd->fileSize+position;
+            break;
+
+        default:
+            break;
+    }
+
+    return (fd->pointer);
+
+}
+
 
 // if(duplicateChecker(fileName,currentDirectory,blckSize)==0){
 //         char *buffer;
@@ -398,3 +506,27 @@ void * readFile(openFileEntry * fd, char * buffer,uint64_t length){
 
 //     free(buffer);
 //     printf("Flushed all buffers\n");
+
+
+
+
+    // uint64_t currentBlock=fd->pointer/blckSize;
+    // uint64_t currentOffset=fd->pointer % blckSize;
+
+    // if(length + currentOffset < blckSize){
+    //     memcpy(fd->fileBuffer + currentOffset,buffer,length);
+    // }
+
+    // else if(length + currentOffset < (blckSize*2)){
+    //     memcpy(fd->fileBuffer + currentOffset , buffer, length);
+    //     LBAwrite(fd->fileBuffer,2,currentBlock + fd->memoryLocation);
+    //     memcpy(fd->fileBuffer,fd->fileBuffer+blckSize,blckSize);  
+    // }
+    // else{
+
+    // }
+
+
+    // fd->pointer=fd->pointer+length;
+    // uint64_t currentBlock=fd->pointer/blckSize;
+    // uint64_t currentOffset=fd->pointer % blckSize;
