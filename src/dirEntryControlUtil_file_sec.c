@@ -23,11 +23,12 @@ void * copyFile(char * fileName,char * newFileName)
 
     if(currentDirectory->directorySize==32){
         printf("No space in current directory. Please move file in new directory and create copy there.\n");
+        free(file);
         return NULL;
     }
 
     //read file to be copied into buffer
-    char * buffer;
+    char * buffer= malloc(file->lba_blocks *blckSize);
     LBAread(buffer,file->lba_blocks,file->memoryLocation);
 
     //LBA for new file
@@ -41,8 +42,9 @@ void * copyFile(char * fileName,char * newFileName)
 
     writeFileDirectoryEntry(newFileName,currentDirectory,file->lba_blocks,lbaStart);
 
+    free(file);
 
-    printf("Copy function complete\n");
+    printf("Copy complete\n");
 }
 
 
@@ -98,6 +100,9 @@ void * moveFile(char * fileName,char * dirName)
     writeFileDirectoryEntry(file->fileName,directory,file->lba_blocks,file->memoryLocation);
 
     removeDirectoryEntry(fileName);
+
+    free(file);
+    free(directory);
 
     printf("Move Complete.\n");
 

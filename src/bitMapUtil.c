@@ -32,7 +32,7 @@ uint64_t findFreeMemory(int * bitMap,uint64_t noOfBlocks ,unsigned long long cou
             } 
         }
         if(counter==count){
-            printf("The memory of length %llu exists and the starting lba block is %lu\n",count,lbaPosition);
+            // printf("The memory of length %llu exists and the starting lba block is %lu\n",count,lbaPosition);
             break;
         }
     }
@@ -55,7 +55,7 @@ void * occupyMemoryBits(int * bitMap,uint64_t noOfBlocks,unsigned long long star
         SetBit(bitMap, i);
         counter+=1;
         if(counter==count){
-            printf("%llu blocks occupied in bitmap starting from position %llu.\n",count,startPosition);
+            // printf("%llu blocks occupied in bitmap starting from position %llu.\n",count,startPosition);
             break;
         }
     }
@@ -70,7 +70,7 @@ void * freeMemoryBits(int * bitMap,uint64_t noOfBlocks, unsigned long long start
         ClearBit(bitMap,i);
         counter+=1;
         if(counter==count){
-            printf("%llu blocks cleared in bitmap starting from position %llu.\n",count,startPosition);
+            // printf("%llu blocks cleared in bitmap starting from position %llu.\n",count,startPosition);
             break;
         }
     }

@@ -127,7 +127,7 @@ void * writeFileDirectoryEntry(char * fileName,Dir_Entry * parentDir,uint64_t bl
         }
     }
      
-    printf("Overwriting current directories meta data with new updaed fields.\n");
+    // printf("Overwriting current directories meta data with new updaed fields.\n");
 
     //Overwrite the parent directory with the new meta data
     LBAwrite(parentDir,1,parentDir->memoryLocation);

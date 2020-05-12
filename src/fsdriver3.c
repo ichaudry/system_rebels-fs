@@ -92,17 +92,17 @@ int main(int argc, char const *argv[])
             vinfo();
         }
 
-        if(strcmp(arguments[0],"bmap\0")==0){
+        else if(strcmp(arguments[0],"bmap\0")==0){
             // printf("Control has reached the get bmap count function\n");
             getBitMap();
         }
 
-        if(strcmp(arguments[0],"ls\0")==0){
+        else if(strcmp(arguments[0],"ls\0")==0){
             // printf("Control has reached the free buffers function\n");
             ls();
         }
 
-        if(strcmp(arguments[0],"mkdir\0")==0){
+        else if(strcmp(arguments[0],"mkdir\0")==0){
             if(arguments[1]==NULL){
                 printf("You need to enter a name for the new directory please try again with mkdir <directoryName>\n");
                 free(inputLine);
@@ -112,7 +112,7 @@ int main(int argc, char const *argv[])
             mkdir(arguments[1]);
         }
 
-        if(strcmp(arguments[0],"read\0")==0){
+        else if(strcmp(arguments[0],"read\0")==0){
             if(arguments[1]==NULL || arguments[2]==NULL){
                 printf("You need to enter a name for the file and number of bytes to read please try again with read <fileName> <noOfBytes>\n");
                 free(inputLine);
@@ -123,7 +123,7 @@ int main(int argc, char const *argv[])
             fsReadFile(arguments[1],noOfBytes);
         }
 
-        if(strcmp(arguments[0],"rmdir\0")==0){
+        else if(strcmp(arguments[0],"rmdir\0")==0){
             if(arguments[1]==NULL){
                 printf("You need to enter a name for the directory to remove please try again with rmdir <directoryName>\n");
                 free(inputLine);
@@ -134,7 +134,7 @@ int main(int argc, char const *argv[])
         }
 
         //Remove file function call
-        if(strcmp(arguments[0],"rm\0")==0){
+        else if(strcmp(arguments[0],"rm\0")==0){
             if(arguments[1]==NULL){
                 printf("You need to enter a name for the file to be removed please try again with rmdir <directoryName>\n");
                 free(inputLine);
@@ -146,12 +146,12 @@ int main(int argc, char const *argv[])
 
 
 
-        if(strcmp(arguments[0],"pwd\0")==0){
+        else if(strcmp(arguments[0],"pwd\0")==0){
             // printf("Control has reached the free buffers function\n");
             pwd();
         }
 
-        if(strcmp(arguments[0],"cpfl\0")==0){
+        else if(strcmp(arguments[0],"cpfl\0")==0){
             // printf("Control has reached the free buffers function\n");
             if(arguments[1]==NULL || arguments[2]==NULL){
                 printf("You need to enter the name of file on linux and name of file created on srfs. Type your command in the following format cpfl <linuxFileName> <newFileName>\n");
@@ -163,7 +163,7 @@ int main(int argc, char const *argv[])
             fsCopyFromLinux(arguments[1],arguments[2]);
         }
 
-        if(strcmp(arguments[0],"move\0")==0){
+        else if(strcmp(arguments[0],"move\0")==0){
             // printf("Control has reached the free buffers function\n");
             if(arguments[1]==NULL || arguments[2]==NULL){
                 printf("You need to enter the name of file to move and the directory to move the file to. Type your command in the following format move <fileName> <dirName>\n");
@@ -173,7 +173,7 @@ int main(int argc, char const *argv[])
             fsMove(arguments[1],arguments[2]);
         }
 
-        if(strcmp(arguments[0],"rename\0")==0){
+        else if(strcmp(arguments[0],"rename\0")==0){
             // printf("Control has reached the free buffers function\n");
             if(arguments[1]==NULL || arguments[2]==NULL){
                 printf("You need to enter the name of file to rename and the new name for the file. Type your command in the following format rename <fileName> <newFileName>\n");
@@ -184,7 +184,7 @@ int main(int argc, char const *argv[])
         }
 
 
-        if(strcmp(arguments[0],"copy\0")==0){
+        else if(strcmp(arguments[0],"copy\0")==0){
             // printf("Control has reached the free buffers function\n");
             if(arguments[1]==NULL || arguments[2]==NULL){
                 printf("You need to enter the name of file to and new name of copied file. Optionally you can also specify a directry to copy to as a third argument. Type your command in the following format copy <fileName> <newFileName> <dirName>(optional)\n");
@@ -200,7 +200,7 @@ int main(int argc, char const *argv[])
         }
 
 
-        if(strcmp(arguments[0],"cd\0")==0){
+       else if(strcmp(arguments[0],"cd\0")==0){
             // printf("Control has reached the change directory function\n");
             if(arguments[1]==NULL){
                 printf("You need to enter a name of the directory to change to, please try again with cd <directoryName>\nNote: To change to parent directory type cd ..");
@@ -215,12 +215,17 @@ int main(int argc, char const *argv[])
                 cd(arguments[1]);
             }
         }
+        else if(strcmp(arguments[0],"man\0")==0){
+            printf("List of commands:\nexit\nvinfo\nbmap\nls\nmkdir\nread\nrmdir\nrm\npwd\ncpfl\nmove\nrename\ncopy\ncd\n");
+        }
+        else{
+            printf("Command not recognized. Type command man for a list of functional commands\n");
+        }
 
         // printf("Clearing the driver buffers.\n");
         free(inputLine);
         free(arguments);
     }
-
 
     return 0;
 }

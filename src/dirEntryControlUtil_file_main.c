@@ -62,32 +62,33 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
             printf("Error finding space for file on file System\n");
         }
 
-        printf("This is the size of the file opened:%lu\n",fileSize);
+        // printf("This is the size of the file opened:%lu\n",fileSize);
 
-        printf("The size of char in c is %lu\n",sizeof(char));
+        // printf("The size of char in c is %lu\n",sizeof(char));
 
-        printf("The number of block that this file would need is %lu\n",blocksNeeded);
+        // printf("The number of block that this file would need is %lu\n",blocksNeeded);
 
-        printf("The last block will have this much data %lu\n",finalBlockSpace);
+        // printf("The last block will have this much data %lu\n",finalBlockSpace);
 
-        printf("This is where the lba start for file writing exists %lu\n",lbaStart);
+        // printf("This is where the lba start for file writing exists %lu\n",lbaStart);
 
+        printf("Starting copy\n");
 
         for(unsigned long i=0;i<blocksNeeded;i++){
             long start=blckSize*i;
             uint64_t chunkSize;
 
             if(i==(blocksNeeded-1)){
-                printf("Setting read length to final block space needed on final iteration.\n");
+                // printf("Setting read length to final block space needed on final iteration.\n");
                 chunkSize=finalBlockSpace;
             }
             else{
                 chunkSize=blckSize;
             }
 
-            printf("The start of loop %lu is %lu\n",i,start);
+            // printf("The start of loop %lu is %lu\n",i,start);
 
-            printf("The chunk size being read is %lu\n",chunkSize);
+            // printf("The chunk size being read is %lu\n",chunkSize);
 
             //Set file pointer to start of chunk thread needs to read
             fseek (filePointer, start, SEEK_SET);
@@ -102,7 +103,7 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
 
 
             //LBA write
-            printf("This is the lba position being written %lu\n",lbaStart+i);
+            // printf("This is the lba position being written %lu\n",lbaStart+i);
             LBAwrite(fileContent,1,lbaStart+i);
 
             //Occupy bitmaps to reflect written data
@@ -140,8 +141,8 @@ void * removeFile(char * fileName){
     if(file){
         //Total File Size
         uint64_t fileSize=file->lba_blocks;
-        printf("The name of the file is: %s\n",file->fileName);
-        printf("The size of the file is: %lu\n",file->lba_blocks);
+        // printf("The name of the file is: %s\n",file->fileName);
+        // printf("The size of the file is: %lu\n",file->lba_blocks);
 
         //Number of blocks allocated to file
         // uint64_t blocksNeeded=(fileSize/512)+1;
@@ -162,7 +163,7 @@ void * removeFile(char * fileName){
         free(file);
 
         //End of fucntion
-        printf("End of the remove file function was reached\n");
+        printf("File Removed\n");
     }
     else{
     printf("No file was found. Either of the two.\n");
@@ -209,35 +210,35 @@ openFileEntry * fileOpen(char * fileName,char * condition){
     
     //If opening for read
     if(strcmp(condition,"r\n")){
-        //check if file exists and get the Directory entry
-        Dir_Entry * file=findFile(fileName);
+        
+        //Create a openFile structure
+        openFileEntry * fd=malloc(sizeof(openFileEntry));
 
-    
+        //check if file exists and get the Directory entry
+        fd->directoryEntry =findFile(fileName);
+
         //If file not found return error
-        if(!file){
+        if(!fd->directoryEntry){
             printf("Error encountered while reading file.\n");
             return NULL;
         }
-
-        //Create a openFile structure
-        openFileEntry * fd=malloc(sizeof(openFileEntry));
 
         //Set file name
         strcpy(fd->fileName,fileName);
 
         //The file size
-        fd->fileSize=file->lba_blocks * blckSize;
+        fd->fileSize=fd->directoryEntry->lba_blocks * blckSize;
 
         //Set pointer to start of file
         fd->pointer=0;
 
+
         //malloc a file buffer to read/write into
         fd->fileBuffer=malloc(blckSize);
 
-        //the starting memory location of file
-        fd->memoryLocation=file->memoryLocation;
 
-        free(file);
+        //the starting memory location of file
+        fd->memoryLocation=fd->directoryEntry->memoryLocation;
 
         return fd;
     }
@@ -269,6 +270,9 @@ void * fileClose(openFileEntry * fd){
     //Free file Buffer
     free(fd->fileBuffer);
 
+    //Free Directory Entry
+    free(fd->directoryEntry);
+
     //Free file descriptor
     free(fd);
 }
@@ -287,14 +291,11 @@ void * writeFile(openFileEntry * fd, char * buffer,uint64_t length){
     for(unsigned long i= 0;i<noOfBlocks;i++){
 
     }
-
-
-
 }
 
 void * readFile(openFileEntry * fd, char * buffer,uint64_t length){
 
-    printf("The number of bytes to read from file are %lu\n",length);
+    // printf("The number of bytes to read from file are %lu\n",length);
 
     //Allocate the buffer on heap to read file into
     buffer=malloc(length);
@@ -334,7 +335,7 @@ void * readFile(openFileEntry * fd, char * buffer,uint64_t length){
 
     }
 
-    printf("Read function finished\n");
+    printf("\nRead finished\n");
     return (void *)buffer;
 }
 
@@ -366,51 +367,3 @@ uint64_t fileSeek(openFileEntry * fd,uint64_t position, int method){
 
 }
 
-
-// if(duplicateChecker(fileName,currentDirectory,blckSize)==0){
-//         char *buffer;
-//         size_t buffersize = 0;
-//         size_t characters;
-//         printf("Begin writing to file \"%s\":\n",fileName);
-//         size_t nread;
-
-//          while ((nread = getline(&buffer, &buffersize,stdin)) != -1) {
-//                printf("Retrieved line of length %zu:\n", nread);
-//             //    fwrite(buffer, nread, 1, stdout);
-//            }
-
-
-//         printf("\n\n\nThis is the data being written: %s\n",buffer); 
-
-//         // printf("%zu characters were read.\n",characters);
-//         // printf("You typed: '%s'\n",buffer);
-//         // printf("The size of the input is %lu\n",sizeof(buffer));
-//         // printf("The size of the input checked from bufsize is %lu\n",bufsize);
-   
-
-//     free(buffer);
-//     printf("Flushed all buffers\n");
-
-
-
-
-    // uint64_t currentBlock=fd->pointer/blckSize;
-    // uint64_t currentOffset=fd->pointer % blckSize;
-
-    // if(length + currentOffset < blckSize){
-    //     memcpy(fd->fileBuffer + currentOffset,buffer,length);
-    // }
-
-    // else if(length + currentOffset < (blckSize*2)){
-    //     memcpy(fd->fileBuffer + currentOffset , buffer, length);
-    //     LBAwrite(fd->fileBuffer,2,currentBlock + fd->memoryLocation);
-    //     memcpy(fd->fileBuffer,fd->fileBuffer+blckSize,blckSize);  
-    // }
-    // else{
-
-    // }
-
-
-    // fd->pointer=fd->pointer+length;
-    // uint64_t currentBlock=fd->pointer/blckSize;
-    // uint64_t currentOffset=fd->pointer % blckSize;

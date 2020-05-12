@@ -10,7 +10,8 @@ typedef struct{
     
     //Need a boolean to check if whole file has been processed?
 
-    char * fileName;
+    char fileName[32];
+    Dir_Entry * directoryEntry;
     uint64_t pointer;   //Current postion of pointer in memory either for read or write
     uint64_t fileSize;
     uint64_t memoryLocation;
