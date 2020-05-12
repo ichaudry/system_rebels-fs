@@ -73,7 +73,7 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
         printf("This is where the lba start for file writing exists %lu\n",lbaStart);
 
 
-        for(long i=0;i<blocksNeeded;i++){
+        for(unsigned long i=0;i<blocksNeeded;i++){
             long start=blckSize*i;
             uint64_t chunkSize;
 

@@ -169,7 +169,7 @@ void * listFiles(){
         }
 
         //Printing file name
-        printf("%s\t\tType: %s\n",tempDir->fileName,fileType);
+        printf("%s\t\tType: %s\t\tSize: %lu Bytes\n",tempDir->fileName,fileType,tempDir->lba_blocks*blckSize);
         free(tempDir);
     }
 }

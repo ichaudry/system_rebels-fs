@@ -163,7 +163,7 @@ int main(int argc, char const *argv[])
             fsCopyFromLinux(arguments[1],arguments[2]);
         }
 
-         if(strcmp(arguments[0],"move\0")==0){
+        if(strcmp(arguments[0],"move\0")==0){
             // printf("Control has reached the free buffers function\n");
             if(arguments[1]==NULL || arguments[2]==NULL){
                 printf("You need to enter the name of file to move and the directory to move the file to. Type your command in the following format move <fileName> <dirName>\n");
@@ -172,6 +172,33 @@ int main(int argc, char const *argv[])
             }
             fsMove(arguments[1],arguments[2]);
         }
+
+        if(strcmp(arguments[0],"rename\0")==0){
+            // printf("Control has reached the free buffers function\n");
+            if(arguments[1]==NULL || arguments[2]==NULL){
+                printf("You need to enter the name of file to rename and the new name for the file. Type your command in the following format rename <fileName> <newFileName>\n");
+                free(inputLine);
+                continue;  
+            }
+            fsRenameFile(arguments[1],arguments[2]);
+        }
+
+
+        if(strcmp(arguments[0],"copy\0")==0){
+            // printf("Control has reached the free buffers function\n");
+            if(arguments[1]==NULL || arguments[2]==NULL){
+                printf("You need to enter the name of file to and new name of copied file. Optionally you can also specify a directry to copy to as a third argument. Type your command in the following format copy <fileName> <newFileName> <dirName>(optional)\n");
+                free(inputLine);
+                continue;  
+            }
+            if(arguments[3]==NULL){
+                fsCopy(arguments[1],arguments[2],NULL);
+            }
+            else{
+                fsCopy(arguments[1],arguments[2],arguments[3]);
+            }
+        }
+
 
         if(strcmp(arguments[0],"cd\0")==0){
             // printf("Control has reached the change directory function\n");

@@ -33,6 +33,7 @@ void * fileClose(openFileEntry * fd);
 void * readFile(openFileEntry * fd, char * buffer, uint64_t length);
 void * copyFile(char * fileName,char * newFileName);
 void * moveFile(char * fileName,char * dirName);
+void * renameFile(char * fileName, char * newFileName);
 
 
 

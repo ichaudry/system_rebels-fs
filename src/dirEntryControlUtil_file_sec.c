@@ -13,24 +13,71 @@
 #include "dirEntryControlUtil.h"
 
 
-
-
 void * copyFile(char * fileName,char * newFileName)
 {
-    /**
-     * The copy file function takes the following
-     * 1: The file to be moved
-     * 2: Name of the new copied version of file
-     * 3: The new directory where to move the file / This could be the current directory of the root
-     *
-     * Steps:
-     * -Check if there is space in the directory to copy a file into it
-     * -Find memory in the bitmap on where to copy file to
-     * -
-     * -
-     */
+    Dir_Entry * file= findFile(fileName);
 
+    if(!file){
+        return NULL;
+    }
+
+    if(currentDirectory->directorySize==32){
+        printf("No space in current directory. Please move file in new directory and create copy there.\n");
+        return NULL;
+    }
+
+    //read file to be copied into buffer
+    char * buffer;
+    LBAread(buffer,file->lba_blocks,file->memoryLocation);
+
+    //LBA for new file
+    uint64_t lbaStart= findFreeMemory(bitMap,noOfBlocks,file->lba_blocks);
+   
+    //Write the new file
+    LBAwrite(buffer,file->lba_blocks,file->memoryLocation);
+
+    //Occupying memory in bitmap
+    occupyMemoryBits(bitMap,noOfBlocks,lbaStart,file->lba_blocks);
+
+    writeFileDirectoryEntry(newFileName,currentDirectory,file->lba_blocks,lbaStart);
+
+
+    printf("Copy function complete\n");
 }
+
+
+
+void * renameFile(char * fileName, char * newFileName){
+   uint64_t * metaData=currentDirectory->filesMeta;
+
+    //Parent ID of directory being renamed
+    uint64_t pid=currentDirectory->memoryLocation;
+
+    //Find directory entry to renamed in current directory
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        if(memoryLocation==0){
+            continue;
+        }
+        Dir_Entry * tempDir= malloc(blckSize);
+        LBAread(tempDir,1,memoryLocation); 
+        
+        //check if the names are a match
+        if(strcmp(tempDir->fileName,fileName)==0){
+            strcpy(tempDir->fileName,newFileName);
+            
+            //Overwrite the directory entry with new name
+            LBAwrite(tempDir,1,memoryLocation);
+    
+            free(tempDir);
+            
+            return NULL;
+        }
+        free(tempDir);
+    }
+    printf("The file with that name was not found. Please enter a valid file name.\n");
+}   
+
 
 void * moveFile(char * fileName,char * dirName)
 {

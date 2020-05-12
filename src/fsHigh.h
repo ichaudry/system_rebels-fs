@@ -35,5 +35,7 @@ void * rmdir(char * dirName);
 void * rm(char * fileName);
 void * fsCopyFromLinux(char * linuxFileName, char * srfsFileName);
 void * fsMove(char * fileName, char * dirName);
+void * fsCopy(char * fileName, char * newFileName, char * dirName);
+void * fsRenameFile(char * fileName, char * newFileName);
 
 #endif

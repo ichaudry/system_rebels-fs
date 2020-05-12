@@ -153,6 +153,20 @@ void * fsMove(char * fileName, char * dirName){
     moveFile(fileName,dirName);
 }
 
+void * fsCopy(char * fileName, char * newFileName, char * dirName){
+    if(dirName==NULL){
+        copyFile(fileName,newFileName);
+    }
+    else{
+        copyFile(fileName,newFileName);
+        moveFile(newFileName,dirName);
+    }
+}
+
+
+void * fsRenameFile(char * fileName, char * newFileName){
+    renameFile(fileName,newFileName);
+}
 
 void * cdRoot(){
     Dir_Entry *directory=changeDirectoryRoot();
