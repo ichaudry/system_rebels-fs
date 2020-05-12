@@ -1,3 +1,0 @@
-- Implement checks to check returns from find free memory function
-- Write recursive functionality for remove driectory function
-and then this is acting as  atest file for copy function and also read function for linux

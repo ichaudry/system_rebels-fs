@@ -39,6 +39,8 @@ void * writeDirectory(char * dirName){
 
     directory->directorySize=0;
 
+    directory->lba_blocks=1;
+
     static const uint64_t tempMeta[32]={0};
     
     memcpy(directory->filesMeta,tempMeta,sizeof tempMeta);
@@ -170,15 +172,15 @@ void * removeDirectory(char * dirName){
         if(strcmp(tempDir->fileName,dirName)==0){
             //Check not directory
             if(tempDir->typeOfFile==0){
-            printf("%s is not a directory. Please enter a valid directory name to remove.\n",dirName);
-            free(tempDir);
-            break;
+                printf("%s is not a directory. Please enter a valid directory name to remove.\n",dirName);
+                free(tempDir);
+                return NULL;
             }
 
-            //TODO IMPORTANT
-            //Everything inside this directory has to deleted as well as anything inside a directory inside this directory.
-            //It has to be a recursive call
-            //Loop through the meta data and for each entry call either the delete file function or recursively call the remove directory function
+            if(tempDir->directorySize > 0){
+                printf("Cannot delete directory because there are files inside it. Try removing all file inside and then removing directory. Or wait for the next release of file system which shall have a recursive delete function.\n");
+                return NULL;
+            }
 
             //Set the bit map at that locaton as free
             freeMemoryBits(bitMap, noOfBlocks, memoryLocation,1);
@@ -198,7 +200,7 @@ void * removeDirectory(char * dirName){
     
             free(tempDir);
             
-            break;
+            return NULL;
         }
         free(tempDir);
     }
