@@ -20,7 +20,7 @@
  * @param blockSize
  * @return
  */
-int duplicateChecker(char * fileName,Dir_Entry * currentDirectory, uint64_t blockSize){
+int duplicateChecker(char * fileName){
     uint64_t * metaData=currentDirectory->filesMeta;
 
     //Check if file exists in current directory
@@ -29,7 +29,7 @@ int duplicateChecker(char * fileName,Dir_Entry * currentDirectory, uint64_t bloc
         if(memoryLocation==0){
             continue;
         }
-        Dir_Entry * tempDir= malloc(blockSize);
+        Dir_Entry * tempDir= malloc(blckSize);
         LBAread(tempDir,1,memoryLocation);
 
         //check if the names are a match
@@ -48,7 +48,7 @@ int duplicateChecker(char * fileName,Dir_Entry * currentDirectory, uint64_t bloc
  * @param currentDirectory
  * @return
  */
-void * printCurrentDirectory(Dir_Entry * currentDirectory){
+void * printCurrentDirectory(){
     printf("This is what is read from the current directory\nThe directory name is: %s\n",currentDirectory->fileName);
     printf("The type of file is: ");
     printf("%"PRIu64"\n",currentDirectory->typeOfFile);
@@ -92,7 +92,7 @@ void * printMeta(uint64_t * metaData){
  * @param vInfo
  * @return
  */
-void * printVolInfo(Volume_Information * vInfo){  
+void * printVolInfo(){  
         printf("This is what is read from the read volume information\n The volume name: %s\n",vInfo->volumeName);
         printf("The volume size is: ");
         printf("%"PRIu64"\n", vInfo->volumeSize);
@@ -110,7 +110,7 @@ void * printVolInfo(Volume_Information * vInfo){
  * @param blockSize
  * @return
  */
-void * listFiles(Dir_Entry * currentDirectory, uint64_t blockSize){
+void * listFiles(){
     //Get metadata of current directory
     uint64_t * metaData=currentDirectory->filesMeta;
 
@@ -120,7 +120,7 @@ void * listFiles(Dir_Entry * currentDirectory, uint64_t blockSize){
             continue;
         }
         //Read directory entry
-        Dir_Entry * tempDir= malloc(blockSize);
+        Dir_Entry * tempDir= malloc(blckSize);
         LBAread(tempDir,1,memoryLocation);
         
         //Printing file name

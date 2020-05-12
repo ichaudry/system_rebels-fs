@@ -13,22 +13,8 @@
 #include "dirEntryControlUtil.h"
 
 
-//Haven't really used yet. 
-//May be more applicable when doing mutlithreaded file processing 
-//Decide later
-typedef struct{
-    
-    //Need a boolean to check if whole file has been processed?
 
-    uint64_t pointer;   //Current postion of pointer in memory either for read or write
-    uint64_t fileSize;
-    char * fileBuffer;
-
-    //Need to keep track of last LBA we wrote a chunk of file to?
-
-} openFileEntry;
-
-void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBlocks){
+void * copyFromLinux(char * linuxFileName, char * srfsFileName){
     FILE * filePointer;
 
     //Total File Size
@@ -44,13 +30,16 @@ void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBloc
     uint64_t lbaStart;
 
     //Open file to initialize file size
-    filePointer = fopen ("test2.txt", "r");
+    filePointer = fopen (linuxFileName, "r");
 
     //Check if file was successfully opened
     if (filePointer) {
         //Calculate file size and how many blocks are need to store file
         fseek(filePointer, 0, SEEK_END);
         fileSize = ftell(filePointer);
+        fseek(filePointer,0,SEEK_SET);
+        
+        
         blocksNeeded=(fileSize/512)+1;
 
         //Amount of space needed in the final block
@@ -118,77 +107,19 @@ void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBloc
 
     printf("Write completed without error.\n");
 
-    //Creating directory entry for the file
-    Dir_Entry * fileEntry= malloc(512);
-    strcpy(fileEntry->fileName,"test2big");
-    fileEntry->typeOfFile=0;
-    fileEntry->lba_blocks=blocksNeeded;
-    fileEntry->parentDirectory=currentDirectory->memoryLocation;
-    fileEntry->memoryLocation=lbaStart;
-
-    //Find free blocks to store file directory entry
-    uint64_t lbaPosition=findFreeMemory(bitMap,noOfBlocks,1);
-
-    uint64_t temp= currentDirectory->directorySize;
-
-    uint64_t * metaData=currentDirectory->filesMeta;
-
-    int canWrite=0;
-
-    //Check if a directory is full
-    if(currentDirectory->directorySize==32){
-        printf("No space to write in the directory, try creating in another directory.\n");
-        free(fileEntry);
-        return NULL;
-    }
-
-    //Find a free block to create a directory entry in current directory
-    for(int i=0;i<32;i++){
-        uint64_t memoryLocation=metaData[i];
-        if(memoryLocation==0){
-            metaData[i]=lbaPosition;
-            currentDirectory->directorySize=temp+1;
-            break;
-        }
-    }
-     
-    printf("Overwriting current directories meta data with new updaed fields.\n");
-
-    //Overwrite the parent directory with the new meta data
-    LBAwrite(currentDirectory,1,currentDirectory->memoryLocation);
-
-    //Write directory entry to disk
-    LBAwrite(fileEntry,1,lbaPosition);
-
-    //Modify bit map 
-    occupyMemoryBits(bitMap,noOfBlocks,lbaPosition,1);
-
-    LBAwrite(bitMap,5,1);
-
-    free(fileEntry);
-
+    writeFileDirectoryEntry(srfsFileName,blocksNeeded,lbaStart);
 }
 
 
 
-void * removeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks){
+void * removeFile(char * fileName){
     uint64_t * metaData= currentDirectory->filesMeta;
 
     //Parent ID of directory being removed
     uint64_t pid=currentDirectory->memoryLocation;
 
-    /*
-    *Delete all the blocks associated with the file
-    *-You know the starting block 
-    *-Do the same math to figure out how many blocks will be occupied by the file
-    *-Call the free bit map function to free the corresponding blocks
-    *
-    * Delete the directory entry for the file
-    * DONE
-    */
-
     //checking find file function
-    Dir_Entry * file=findFile(fileName,currentDirectory,blockSize);
+    Dir_Entry * file=findFile(fileName);
     if(file){
         //Total File Size
         uint64_t fileSize=file->lba_blocks;
@@ -196,27 +127,95 @@ void * removeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint
         printf("The size of the file is: %lu\n",file->lba_blocks);
 
         //Number of blocks allocated to file
-        uint64_t blocksNeeded=(fileSize/512)+1;
+        // uint64_t blocksNeeded=(fileSize/512)+1;
 
         //The starting lba of file
         uint64_t lbaStart=file->memoryLocation;
 
         //Free the lba blocks in the bitmap
-        freeMemoryBits(bitMap,noOfBlocks,lbaStart,blocksNeeded);
+        freeMemoryBits(bitMap,noOfBlocks,lbaStart,fileSize);
 
+        //free the directory entry
+        removeDirectoryEntry(fileName);
 
+        //overwrite bitmap
+        LBAwrite(bitMap,bitMapSize,1);
 
+        //freeing file pointer
+        free(file);
 
-
-
-
+        //End of fucntion
+        printf("End of the remove file function was reached\n");
     }
     else{
     printf("No file was found or your function is fucked up. Either of the two.\n");
     }
 }
 
-Dir_Entry * findFile(char * fileName,Dir_Entry * currentDirectory,uint64_t blockSize){
+
+/**
+ * Remove a directory entry
+ * @param dirName
+ * @param currentDirectory
+ * @param bitMap
+ * @param bitMapSize
+ * @param blckSize
+ * @param noOfBlocks
+ * @return
+ */
+void * removeDirectoryEntry(char * dirEntryName){
+    uint64_t * metaData=currentDirectory->filesMeta;
+
+    //Parent ID of directory being removed
+    uint64_t pid=currentDirectory->memoryLocation;
+
+    //Find directory entry to remove in current directory
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        if(memoryLocation==0){
+            continue;
+        }
+        Dir_Entry * tempDir= malloc(blckSize);
+        LBAread(tempDir,1,memoryLocation); 
+        
+        //check if the names are a match
+        if(strcmp(tempDir->fileName,dirEntryName)==0){
+            //Check if directory
+            if(tempDir->typeOfFile==1){
+            printf("%s is a directory. Please use the rmdir command to remove a directory and all of its contents.\n",dirEntryName);
+            free(tempDir);
+            break;
+            }
+
+            //Set the bit map at that location as free
+            freeMemoryBits(bitMap, noOfBlocks, memoryLocation,1);
+
+            //Set the meta data in the roots as 0 indicating the place is free
+            metaData[i]=0;
+
+            uint64_t temp= currentDirectory->directorySize;
+
+            currentDirectory->directorySize=temp-1;
+
+            //Overwrite the parent directory with the new meta data
+            LBAwrite(currentDirectory,1,pid);
+
+            // //overwrite bitmap
+            // LBAwrite(bitMap,bitMapSize,1);
+    
+            free(tempDir);
+            
+            break;
+        }
+        free(tempDir);
+    }
+    printf("The directory entry with that name was not found. Please enter a valid direcotry name.\n");
+    
+}
+
+
+
+Dir_Entry * findFile(char * fileName){
     
     uint64_t * metaData=currentDirectory->filesMeta;
 
@@ -229,7 +228,7 @@ Dir_Entry * findFile(char * fileName,Dir_Entry * currentDirectory,uint64_t block
         }
 
         //Allocate a directory entry to read into 
-        Dir_Entry * tempDir= malloc(blockSize);
+        Dir_Entry * tempDir= malloc(blckSize);
         LBAread(tempDir,1,memoryLocation);
 
         //check if the names are a match
@@ -251,35 +250,151 @@ Dir_Entry * findFile(char * fileName,Dir_Entry * currentDirectory,uint64_t block
     return NULL;
 }
 
+void * copyFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blckSize,uint64_t noOfBlocks)
+{
+    /**
+     * The copy file function takes the following
+     * 1: The file to be moved
+     * 2: Name of the new copied version of file
+     * 3: The new directory where to move the file / This could be the current directory of the root
+     *
+     * Steps:
+     * -Check if there is space in the directory to copy a file into it
+     * -Find memory in the bitmap on where to copy file to
+     * -
+     * -
+     */
 
+}
 
+void * moveFile(char * fileName)
+{
+    /**
+     * The move file function takes in two arguments
+     * 1: The file to be moved
+     * 2: The new directory where to move the file / this could be the root or the current directory
+     * 3:
+     *
+     * Steps:
+     * -Check if there is space in the directory to move a file into it
+     * -Find a place to
+     */
 
-void * writeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks){
-    if(duplicateChecker(fileName,currentDirectory,blockSize)==0){
-        char *buffer;
-        size_t bufsize = 0;
-        size_t characters;
-        printf("Begin writing to file \"%s\":\n",fileName);
+}
 
-        while((characters = getline(&buffer,&bufsize,stdin))!=-1){
-            /**
-             * THIS IS THE REASON WE NEED A FILE DESCRIPTOR STRUCTURE THAT CAN KEEP A BUFFER SET TO WHERE YOU ARE WRITING 
-             * THE ABOVE FUNCTION IS GOING TO HAND YOU A BUFFER OF SOME SIZE ON EACH CALL. 
-             * HAND IT TO FUNCTION THAT IS ALLOCATED AT A BLOCK SIZE BOUNDARY 
-             * DO A MEMCOPY SO NOW THAT BUFFER HAS IT 
-             * AFTER END OF FILE MAKE SURE TO WRITE THAT BUFFER 
-             */
+openFileEntry * fileOpen(char * fileName,char * condition){
+    
+    //If opening for read
+    if(strcmp(condition,"r\n")){
+        //check if file exists and get the Directory entry
+        Dir_Entry * file=findFile(fileName);
 
-        // printf("%zu characters were read.\n",characters);
-        // printf("You typed: '%s'\n",buffer);
-        // printf("The size of the input is %lu\n",sizeof(buffer));
-        // printf("The size of the input checked from bufsize is %lu\n",bufsize);
+        //If file not found return error
+        if(!file){
+            printf("Error encountered while reading file.\n");
+            return NULL;
         }
-        free(buffer);
-        printf("Flushed all buffers\n");
+
+        //Create a openFile structure
+        openFileEntry * fd=malloc(sizeof(openFileEntry));
+
+        //The file size
+        fd->fileSize=file->lba_blocks * blckSize;
+
+        //Set pointer to start of file
+        fd->pointer=0;
+
+        //malloc a file buffer to read/write into
+        fd->fileBuffer=malloc(blckSize);
+
+        //the starting memory location of file
+        fd->memoryLocation=file->memoryLocation;
+
+        return fd;
+    }
+
+    
+
+
+}
+
+void * fileClose(openFileEntry * fd){
+    //Free file Buffer
+    free(fd->fileBuffer);
+
+    //Free file descriptor
+    free(fd);
+}
+
+
+void * readFile(openFileEntry * fd, char * buffer,uint64_t length){
+
+    printf("The number of bytes to read from file are %lu\n",length);
+
+    //Allocate the buffer on heap to read file into
+    buffer=malloc(length);
+
+    //check for malloc errors
+    if(!buffer){
+        printf("Malloc of read buffer failed.\n");
+        return NULL;
+    }
+
+    //Can't read beyond file size
+    if(length > fd->fileSize){
+        printf("Trying to do a read of %lu bytes on a file that is %lu bytes\n",length,fd->fileSize);
+        return NULL;
+    }
+
+    //No of blocks to read
+    unsigned long noOfBlocks= (length/blckSize)+1;
+
+    for(unsigned long i= 0;i<noOfBlocks;i++){
+        LBAread(fd->fileBuffer,1,fd->memoryLocation+i);
+        
+        //size to memcpy into buffer
+        size_t n;
+        
+        fd->pointer=blckSize * i;
+        
+        if(i==(noOfBlocks-1)){
+            n= length%blckSize;
+        }
+        else
+        {
+            n=blckSize;
+        }
+    
+        memcpy(buffer + fd->pointer,fd->fileBuffer,n);
 
     }
+
+    printf("Read function finished\n");
+    return (void *)buffer;
 }
 
 
 
+// if(duplicateChecker(fileName,currentDirectory,blckSize)==0){
+//         char *buffer;
+//         size_t buffersize = 0;
+//         size_t characters;
+//         printf("Begin writing to file \"%s\":\n",fileName);
+//         size_t nread;
+
+//          while ((nread = getline(&buffer, &buffersize,stdin)) != -1) {
+//                printf("Retrieved line of length %zu:\n", nread);
+//             //    fwrite(buffer, nread, 1, stdout);
+//            }
+
+
+//         printf("\n\n\nThis is the data being written: %s\n",buffer); 
+
+//         // printf("%zu characters were read.\n",characters);
+//         // printf("You typed: '%s'\n",buffer);
+//         // printf("The size of the input is %lu\n",sizeof(buffer));
+//         // printf("The size of the input checked from bufsize is %lu\n",bufsize);
+   
+
+//     free(buffer);
+//     printf("Flushed all buffers\n");

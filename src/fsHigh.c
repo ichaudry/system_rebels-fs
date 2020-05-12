@@ -12,16 +12,6 @@
 #include "fsHigh.h"
 #include "dirEntryControlUtil.h"
 
-uint64_t volumeSize;
-uint64_t blckSize;
-uint64_t noOfBlocks;
-uint64_t bitMapSize;
-uint64_t arraySize;
-Volume_Information * vInfo;
-int * bitMap;
-
-//Current active directory
-Dir_Entry * currentDirectory;
 
 
 /**
@@ -132,29 +122,36 @@ int startFileSystem(char * volName, uint64_t * volSize, uint64_t * blockSize, in
 
 
 void * mkdir(char * dirName){
-    writeDirectory(dirName,currentDirectory,bitMap,bitMapSize,blckSize,noOfBlocks);
+    writeDirectory(dirName);
     
 }
 
 void * rmdir(char * dirName){
-    removeDirectory(dirName,currentDirectory,bitMap,bitMapSize,blckSize,noOfBlocks);
+    removeDirectory(dirName);
 }
 
 void * rm(char * fileName){
-    removeFile(fileName,currentDirectory,bitMap,bitMapSize,blckSize,noOfBlocks);
+    removeFile(fileName);
 }
 
-void * fsCopyFromLinux(){
-    copyFromLinux(currentDirectory,bitMap,noOfBlocks);
+void * fsCopyFromLinux(char * linuxFileName, char * srfsFileName){
+    copyFromLinux(linuxFileName,srfsFileName);
 }
 
-void * fsWriteFile(char * fileName){
-    writeFile(fileName,currentDirectory,bitMap,bitMapSize,blckSize,noOfBlocks);
+void * fsReadFile(char * fileName,uint64_t length){
+    char * buffer;
+    openFileEntry * fd= fileOpen(fileName,"r");
+    if(fd){
+    buffer=(char *)readFile(fd,buffer,length);
+    printf("The sizeof read  buffer is %lu\nHere are the contents read:\n\n%s\n\n",strlen(buffer),buffer);
+    free(buffer);
+    fileClose(fd);
+    }
 }
 
 
 void * cdRoot(){
-    Dir_Entry *directory=changeDirectoryRoot(currentDirectory,blckSize);
+    Dir_Entry *directory=changeDirectoryRoot();
     
      //Catch null pointer returns
     if(directory){
@@ -164,7 +161,7 @@ void * cdRoot(){
 }
 
 void * cd(char * dirName){
-    Dir_Entry *directory=changeDirectory(dirName,currentDirectory,blckSize);
+    Dir_Entry *directory=changeDirectory(dirName);
 
     //Catch null pointer returns
     if(directory){
@@ -174,7 +171,7 @@ void * cd(char * dirName){
 }
 
 void * pwd(){
-    printCurrentDirectory(currentDirectory);
+    printCurrentDirectory();
 }
 
 void * vinfo(){  
@@ -182,7 +179,7 @@ void * vinfo(){
 }
 
 void * ls(){
-    listFiles(currentDirectory,blckSize);
+    listFiles();
 }
 
 void * getBitMap(){

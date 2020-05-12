@@ -6,6 +6,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <math.h>
+#include "fsHigh.h"
 #include "bitMapUtil.h"
 
 uint64_t findFreeMemory(int * bitMap,uint64_t noOfBlocks ,unsigned long long count){

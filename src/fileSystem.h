@@ -20,7 +20,7 @@ typedef struct {
 	//Number of directory entries in a directory
 	uint64_t directorySize;
 
-	//block Size for file 
+	//blocks for file 
 	uint64_t lba_blocks;
 
 	//Stores the head of the file parent directory if it exists.

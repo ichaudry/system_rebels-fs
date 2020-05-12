@@ -61,6 +61,7 @@ int main(int argc, char const *argv[])
     while(1){
         printf("\n>>>");
 
+
         //Get stdin
         char * inputLine= getInputLine(); 
 
@@ -111,13 +112,15 @@ int main(int argc, char const *argv[])
             mkdir(arguments[1]);
         }
 
-        if(strcmp(arguments[0],"write\0")==0){
-            if(arguments[1]==NULL){
-                printf("You need to enter a name for the new file please try again with write <fileName>\n");
+        if(strcmp(arguments[0],"read\0")==0){
+            if(arguments[1]==NULL || arguments[2]==NULL){
+                printf("You need to enter a name for the file and number of bytes to read please try again with read <fileName> <noOfBytes>\n");
                 free(inputLine);
                 continue;
             }
-            fsWriteFile(arguments[1]); 
+            uint64_t noOfBytes= S64(arguments[2]);
+
+            fsReadFile(arguments[1],noOfBytes);
         }
 
         if(strcmp(arguments[0],"rmdir\0")==0){
@@ -150,7 +153,14 @@ int main(int argc, char const *argv[])
 
         if(strcmp(arguments[0],"cpfl\0")==0){
             // printf("Control has reached the free buffers function\n");
-            fsCopyFromLinux();
+            if(arguments[1]==NULL || arguments[2]==NULL){
+                printf("You need to enter the name of file on linux and name of file created on srfs. Type your command in the following format cpfl <linuxFileName> <newFileName>\n");
+                free(inputLine);
+                continue;  
+            }
+        
+            
+            fsCopyFromLinux(arguments[1],arguments[2]);
         }
 
         if(strcmp(arguments[0],"cd\0")==0){
@@ -213,8 +223,11 @@ char *getInputLine(){
     char *inputLine = NULL;
     size_t bufsize = 0; // have getline allocate a buffer for us
 
+    
+
     if (getline(&inputLine, &bufsize, stdin) == -1){
         if (feof(stdin)) {
+            printf("EOF on stdin reached.\n");
             exit(EXIT_SUCCESS);  // We recieved an EOF
         } else {
             perror("readline");
@@ -222,7 +235,7 @@ char *getInputLine(){
         }
     }
 
-
+ 
     return inputLine;
 
 }

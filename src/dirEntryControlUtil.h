@@ -5,20 +5,46 @@
 #ifndef SYSTEM_REBELS_FS_DIRENTRYCONTROLUTIL_H
 #define SYSTEM_REBELS_FS_DIRENTRYCONTROLUTIL_H
 
+
+typedef struct{
+    
+    //Need a boolean to check if whole file has been processed?
+
+    uint64_t pointer;   //Current postion of pointer in memory either for read or write
+    uint64_t fileSize;
+    uint64_t memoryLocation;
+    uint64_t dirEntryLocation;
+    
+    char * fileBuffer;
+
+    //Need to keep track of last LBA we wrote a chunk of file to?
+
+} openFileEntry;
+
+
 void * printMeta(uint64_t * metaData);
-void * writeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks);
-void * removeDirectory(char * dirName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks);
-void * writeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks);
-Dir_Entry  * changeDirectoryRoot(Dir_Entry * currentDirectory,uint64_t blockSize);
-Dir_Entry * changeDirectory(char * dirName,Dir_Entry * currentDirectory, uint64_t blockSize);
+void * writeDirectory(char * dirName);
+void * writeFileDirectoryEntry(char * fileName,uint64_t blocksNeeded,uint64_t lbaStart);
+void * removeDirectory(char * dirName);
+
+openFileEntry * fileOpen(char * fileName,char * condition);
+void * fileClose(openFileEntry * fd);
+void * readFile(openFileEntry * fd, char * buffer, uint64_t length);
+
+
+
+Dir_Entry  * changeDirectoryRoot();
+Dir_Entry * changeDirectory(char * dirName);
 int duplicateChecker();
-void * printCurrentDirectory(Dir_Entry * currentDirectory);
+void * printCurrentDirectory();
 void * printDirectory(Dir_Entry * directory);
-void * printVolInfo(Volume_Information * vInfo);
-void * listFiles(Dir_Entry * currentDirectory, uint64_t blockSize);
-void * copyFromLinux(Dir_Entry * currentDirectory,int * bitMap,uint64_t noOfBlocks);
-void * removeFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blockSize,uint64_t noOfBlocks);
-Dir_Entry * findFile(char * fileName,Dir_Entry * currentDirectory,uint64_t blockSize);
+void * printVolInfo();
+void * listFiles();
+void * copyFromLinux(char * linuxFileName, char * srfsFileName);
+void * removeFile(char * fileName);
+void * removeDirectoryEntry(char * dirName);
+Dir_Entry * findFile(char * fileName);
+
 
 
 
