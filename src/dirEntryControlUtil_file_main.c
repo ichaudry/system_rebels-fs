@@ -15,6 +15,11 @@
 
 
 void * copyFromLinux(char * linuxFileName, char * srfsFileName){
+
+    if(duplicateChecker(srfsFileName)==1){
+        printf("Try with a different fileName\n");
+    }
+
     FILE * filePointer;
 
     //Total File Size
@@ -67,12 +72,6 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
 
         printf("This is where the lba start for file writing exists %lu\n",lbaStart);
 
-        // openFileEntry * fd=fileOpen(srfsFileName,"w");
-
-        // fd->fileSize=fileSize;
-        // fd->memoryLocation=lbaStart;
-        
-
 
         for(long i=0;i<blocksNeeded;i++){
             long start=blckSize*i;
@@ -116,7 +115,7 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName){
             free(fileContent);
         }
 
-        writeFileDirectoryEntry(srfsFileName,blocksNeeded,lbaStart);
+        writeFileDirectoryEntry(srfsFileName,currentDirectory,blocksNeeded,lbaStart);
 
         printf("Write completed without error.\n");
 
@@ -171,68 +170,6 @@ void * removeFile(char * fileName){
 }
 
 
-/**
- * Remove a directory entry
- * @param dirName
- * @param currentDirectory
- * @param bitMap
- * @param bitMapSize
- * @param blckSize
- * @param noOfBlocks
- * @return
- */
-void * removeDirectoryEntry(char * dirEntryName){
-    uint64_t * metaData=currentDirectory->filesMeta;
-
-    //Parent ID of directory being removed
-    uint64_t pid=currentDirectory->memoryLocation;
-
-    //Find directory entry to remove in current directory
-    for(int i=0;i<32;i++){
-        uint64_t memoryLocation=metaData[i];
-        if(memoryLocation==0){
-            continue;
-        }
-        Dir_Entry * tempDir= malloc(blckSize);
-        LBAread(tempDir,1,memoryLocation); 
-        
-        //check if the names are a match
-        if(strcmp(tempDir->fileName,dirEntryName)==0){
-            //Check if directory
-            if(tempDir->typeOfFile==1){
-            printf("%s is a directory. Please use the rmdir command to remove a directory and all of its contents.\n",dirEntryName);
-            free(tempDir);
-            break;
-            }
-
-            //Set the bit map at that location as free
-            freeMemoryBits(bitMap, noOfBlocks, memoryLocation,1);
-
-            //Set the meta data in the roots as 0 indicating the place is free
-            metaData[i]=0;
-
-            uint64_t temp= currentDirectory->directorySize;
-
-            currentDirectory->directorySize=temp-1;
-
-            //Overwrite the parent directory with the new meta data
-            LBAwrite(currentDirectory,1,pid);
-
-            // //overwrite bitmap
-            // LBAwrite(bitMap,bitMapSize,1);
-    
-            free(tempDir);
-            
-            break;
-        }
-        free(tempDir);
-    }
-    printf("The directory entry with that name was not found. Please enter a valid direcotry name.\n");
-    
-}
-
-
-
 Dir_Entry * findFile(char * fileName){
     
     uint64_t * metaData=currentDirectory->filesMeta;
@@ -266,38 +203,6 @@ Dir_Entry * findFile(char * fileName){
 
     printf("No file with that name was found. Please check the name you entered and try again.\n");
     return NULL;
-}
-
-void * copyFile(char * fileName,Dir_Entry * currentDirectory,int * bitMap,uint64_t bitMapSize,uint64_t blckSize,uint64_t noOfBlocks)
-{
-    /**
-     * The copy file function takes the following
-     * 1: The file to be moved
-     * 2: Name of the new copied version of file
-     * 3: The new directory where to move the file / This could be the current directory of the root
-     *
-     * Steps:
-     * -Check if there is space in the directory to copy a file into it
-     * -Find memory in the bitmap on where to copy file to
-     * -
-     * -
-     */
-
-}
-
-void * moveFile(char * fileName)
-{
-    /**
-     * The move file function takes in two arguments
-     * 1: The file to be moved
-     * 2: The new directory where to move the file / this could be the root or the current directory
-     * 3:
-     *
-     * Steps:
-     * -Check if there is space in the directory to move a file into it
-     * -Find a place to
-     */
-
 }
 
 openFileEntry * fileOpen(char * fileName,char * condition){
@@ -380,31 +285,10 @@ void * writeFile(openFileEntry * fd, char * buffer,uint64_t length){
     uint64_t currentOffset=fd->pointer % blckSize;
     
     for(unsigned long i= 0;i<noOfBlocks;i++){
-        
-        
-
-
-
-
 
     }
 
 
-
- 
-    // else if(length + currentOffset < (blckSize*2)){
-    //     memcpy(fd->fileBuffer + currentOffset , buffer, length);
-    //     LBAwrite(fd->fileBuffer,2,currentBlock + fd->memoryLocation);
-    //     memcpy(fd->fileBuffer,fd->fileBuffer+blckSize,blckSize);  
-    // }
-    // else{
-
-    // }
-
-
-    // fd->pointer=fd->pointer+length;
-    // uint64_t currentBlock=fd->pointer/blckSize;
-    // uint64_t currentOffset=fd->pointer % blckSize;
 
 }
 

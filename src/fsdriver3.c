@@ -163,6 +163,16 @@ int main(int argc, char const *argv[])
             fsCopyFromLinux(arguments[1],arguments[2]);
         }
 
+         if(strcmp(arguments[0],"move\0")==0){
+            // printf("Control has reached the free buffers function\n");
+            if(arguments[1]==NULL || arguments[2]==NULL){
+                printf("You need to enter the name of file to move and the directory to move the file to. Type your command in the following format move <fileName> <dirName>\n");
+                free(inputLine);
+                continue;  
+            }
+            fsMove(arguments[1],arguments[2]);
+        }
+
         if(strcmp(arguments[0],"cd\0")==0){
             // printf("Control has reached the change directory function\n");
             if(arguments[1]==NULL){

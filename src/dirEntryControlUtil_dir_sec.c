@@ -41,6 +41,44 @@ int duplicateChecker(char * fileName){
     return 0;
 }
 
+
+Dir_Entry * findDirectory(char * dirName){
+    
+    uint64_t * metaData=currentDirectory->filesMeta;
+
+
+    //Find directory to remove in current directory
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        if(memoryLocation==0){
+            continue;
+        }
+
+        //Allocate a directory entry to read into 
+        Dir_Entry * tempDir= malloc(blckSize);
+        LBAread(tempDir,1,memoryLocation);
+
+        //check if the names are a match
+        if(strcmp(tempDir->fileName,dirName)==0){
+            //Check if its a directory
+            if(tempDir->typeOfFile==0){
+            printf("%s is a file and not a directory. Please enter a valid directory name.\n",dirName);
+            free(tempDir);
+            return NULL;
+            }
+            //return a pointer to file directory entry
+            return tempDir;
+        }
+        //Free tempDir at the end of for loop
+        free(tempDir);
+    }
+
+    printf("No file with that name was found. Please check the name you entered and try again.\n");
+    return NULL;
+}
+
+
+
 /**
  * Print current working directory information
  * @return

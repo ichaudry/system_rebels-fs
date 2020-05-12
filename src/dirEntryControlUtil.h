@@ -25,12 +25,14 @@ typedef struct{
 
 void * printMeta(uint64_t * metaData);
 void * writeDirectory(char * dirName);
-void * writeFileDirectoryEntry(char * fileName,uint64_t blocksNeeded,uint64_t lbaStart);
+void * writeFileDirectoryEntry(char * fileName,Dir_Entry * parentDir,uint64_t blocksNeeded,uint64_t lbaStart);
 void * removeDirectory(char * dirName);
 
 openFileEntry * fileOpen(char * fileName,char * condition);
 void * fileClose(openFileEntry * fd);
 void * readFile(openFileEntry * fd, char * buffer, uint64_t length);
+void * copyFile(char * fileName,char * newFileName);
+void * moveFile(char * fileName,char * dirName);
 
 
 
@@ -45,6 +47,7 @@ void * copyFromLinux(char * linuxFileName, char * srfsFileName);
 void * removeFile(char * fileName);
 void * removeDirectoryEntry(char * dirName);
 Dir_Entry * findFile(char * fileName);
+Dir_Entry * findDirectory(char * dirName);
 
 
 

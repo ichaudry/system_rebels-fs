@@ -88,25 +88,28 @@ void * writeDirectory(char * dirName){
     }
 }
 
-void * writeFileDirectoryEntry(char * fileName,uint64_t blocksNeeded,uint64_t lbaStart){
+void * writeFileDirectoryEntry(char * fileName,Dir_Entry * parentDir,uint64_t blocksNeeded,uint64_t lbaStart){
+    
+    
+    
     //Creating directory entry for the file
     Dir_Entry * fileEntry= malloc(512);
     strcpy(fileEntry->fileName,fileName);
     fileEntry->typeOfFile=0;
     fileEntry->lba_blocks=blocksNeeded;
-    fileEntry->parentDirectory=currentDirectory->memoryLocation;
+    fileEntry->parentDirectory=parentDir->memoryLocation;
     fileEntry->memoryLocation=lbaStart;
 
     //Find free blocks to store file directory entry
     uint64_t lbaPosition=findFreeMemory(bitMap,noOfBlocks,1);
 
-    uint64_t temp= currentDirectory->directorySize;
+    uint64_t temp= parentDir->directorySize;
 
-    uint64_t * metaData=currentDirectory->filesMeta;
+    uint64_t * metaData=parentDir->filesMeta;
 
 
     //Check if a directory is full
-    if(currentDirectory->directorySize==32){
+    if(parentDir->directorySize==32){
         printf("No space to write in the directory, try creating in another directory.\n");
         free(fileEntry);
         return NULL;
@@ -117,7 +120,7 @@ void * writeFileDirectoryEntry(char * fileName,uint64_t blocksNeeded,uint64_t lb
         uint64_t memoryLocation=metaData[i];
         if(memoryLocation==0){
             metaData[i]=lbaPosition;
-            currentDirectory->directorySize=temp+1;
+            parentDir->directorySize=temp+1;
             break;
         }
     }
@@ -125,7 +128,7 @@ void * writeFileDirectoryEntry(char * fileName,uint64_t blocksNeeded,uint64_t lb
     printf("Overwriting current directories meta data with new updaed fields.\n");
 
     //Overwrite the parent directory with the new meta data
-    LBAwrite(currentDirectory,1,currentDirectory->memoryLocation);
+    LBAwrite(parentDir,1,parentDir->memoryLocation);
 
     //Write directory entry to disk
     LBAwrite(fileEntry,1,lbaPosition);
@@ -202,6 +205,70 @@ void * removeDirectory(char * dirName){
     printf("The directory with that name was not found. Please enter a valid direcotry name.\n");
     
 }
+
+
+
+/**
+ * Remove a directory entry
+ * @param dirName
+ * @param currentDirectory
+ * @param bitMap
+ * @param bitMapSize
+ * @param blckSize
+ * @param noOfBlocks
+ * @return
+ */
+void * removeDirectoryEntry(char * dirEntryName){
+    uint64_t * metaData=currentDirectory->filesMeta;
+
+    //Parent ID of directory being removed
+    uint64_t pid=currentDirectory->memoryLocation;
+
+    //Find directory entry to remove in current directory
+    for(int i=0;i<32;i++){
+        uint64_t memoryLocation=metaData[i];
+        if(memoryLocation==0){
+            continue;
+        }
+        Dir_Entry * tempDir= malloc(blckSize);
+        LBAread(tempDir,1,memoryLocation); 
+        
+        //check if the names are a match
+        if(strcmp(tempDir->fileName,dirEntryName)==0){
+            //Check if directory
+            if(tempDir->typeOfFile==1){
+            printf("%s is a directory. Please use the rmdir command to remove a directory and all of its contents.\n",dirEntryName);
+            free(tempDir);
+            break;
+            }
+
+            //Set the bit map at that location as free
+            freeMemoryBits(bitMap, noOfBlocks, memoryLocation,1);
+
+            //Set the meta data in the roots as 0 indicating the place is free
+            metaData[i]=0;
+
+            uint64_t temp= currentDirectory->directorySize;
+
+            currentDirectory->directorySize=temp-1;
+
+            //Overwrite the parent directory with the new meta data
+            LBAwrite(currentDirectory,1,pid);
+
+            // //overwrite bitmap
+            // LBAwrite(bitMap,bitMapSize,1);
+    
+            free(tempDir);
+            
+            return NULL;
+        }
+        free(tempDir);
+    }
+    printf("The directory entry with that name was not found. Please enter a valid direcotry name.\n");
+    
+}
+
+
 
 /**
  * Go to root directory

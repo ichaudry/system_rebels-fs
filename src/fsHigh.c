@@ -149,6 +149,10 @@ void * fsReadFile(char * fileName,uint64_t length){
     }
 }
 
+void * fsMove(char * fileName, char * dirName){
+    moveFile(fileName,dirName);
+}
+
 
 void * cdRoot(){
     Dir_Entry *directory=changeDirectoryRoot();
